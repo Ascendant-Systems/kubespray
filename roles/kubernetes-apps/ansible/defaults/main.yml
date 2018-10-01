@@ -14,6 +14,17 @@ nodelocaldns_cpu_requests: 100m
 nodelocaldns_memory_limit: 170Mi
 nodelocaldnsdns_memory_requests: 70Mi
 
+# Images
+image_arch: "amd64"
+kubedns_image_repo: "gcr.io/google_containers/k8s-dns-kube-dns-{{ image_arch }}"
+kubedns_image_tag: "{{ kubedns_version }}"
+dnsmasq_nanny_image_repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-{{ image_arch }}"
+dnsmasq_nanny_image_tag: "{{ kubedns_version }}"
+dnsmasq_sidecar_image_repo: "gcr.io/google_containers/k8s-dns-sidecar-{{ image_arch }}"
+dnsmasq_sidecar_image_tag: "{{ kubedns_version }}"
+kubednsautoscaler_image_repo: "gcr.io/google_containers/cluster-proportional-autoscaler-{{ image_arch }}"
+kubednsautoscaler_image_tag: "{{ kubednsautoscaler_version }}"
+
 # Netchecker
 deploy_netchecker: false
 netchecker_port: 31081
