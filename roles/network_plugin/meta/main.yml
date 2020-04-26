@@ -26,7 +26,7 @@ dependencies:
       - canal
 
   - role: network_plugin/cni
-    when: kube_network_plugin == 'cni'
+    when: kube_network_plugin in ['cni', 'cloud']
     tags:
       - cni
 
@@ -40,13 +40,15 @@ dependencies:
     tags:
       - contiv
 
+  - role: network_plugin/kube-ovn
+    when: kube_network_plugin == 'kube-ovn'
+    tags:
+      - kube-ovn
+
   - role: network_plugin/kube-router
     when: kube_network_plugin == 'kube-router'
     tags:
       - kube-router
-
-  - role: network_plugin/cloud
-    when: kube_network_plugin == 'cloud'
 
   - role: network_plugin/multus
     when: kube_network_plugin_multus

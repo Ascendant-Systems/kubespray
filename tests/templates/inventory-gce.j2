@@ -37,6 +37,13 @@
 {{node1}}
 {{node2}}
 {{node3}}
+
+[broken_kube-master]
+{{node2}}
+
+[etcd]
+{{node2}}
+{{node3}}
 {% elif mode == "default" %}
 [kube-master]
 {{node1}}
@@ -66,6 +73,9 @@
 [k8s-cluster:children]
 kube-node
 kube-master
+calico-rr
+
+[calico-rr]
 
 {% if mode is defined and mode in ["scale", "separate-scale", "ha-scale"] %}
 [fake_hosts]

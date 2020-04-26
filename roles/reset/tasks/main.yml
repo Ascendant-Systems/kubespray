@@ -157,6 +157,7 @@
   with_items:
     - filter
     - nat
+    - mangle
   when: flush_iptables|bool
   tags:
     - iptables
@@ -234,10 +235,14 @@
     - "{{ bin_dir }}/kubernetes-scripts"
     - "{{ bin_dir }}/kubectl"
     - "{{ bin_dir }}/kubeadm"
+    - "{{ bin_dir }}/hyperkube"
     - "{{ bin_dir }}/helm"
     - "{{ bin_dir }}/calicoctl"
+    - "{{ bin_dir }}/calicoctl.sh"
     - "{{ bin_dir }}/calico-upgrade"
     - "{{ bin_dir }}/weave"
+    - "{{ bin_dir }}/crictl"
+    - "{{ bin_dir }}/netctl"
     - /var/lib/cni
     - /etc/vault
     - /etc/contiv
@@ -246,6 +251,9 @@
     - /etc/openvswitch
     - /run/openvswitch
     - /var/lib/kube-router
+    - /var/lib/calico
+    - /etc/cilium
+    - /run/calico
   ignore_errors: yes
   tags:
     - files
@@ -283,7 +291,11 @@
   service:
     name: >-
       {% if ansible_os_family == "RedHat" -%}
+      {%- if ansible_distribution_major_version|int == 8 -%}
+      NetworkManager
+      {%- else -%}
       network
+      {%- endif -%}
       {%- elif ansible_distribution == "Ubuntu" and ansible_distribution_release == "bionic" -%}
       systemd-networkd
       {%- elif ansible_os_family == "Debian" -%}
@@ -291,7 +303,7 @@
       {%- endif %}
     state: restarted
   when:
-    - ansible_os_family not in ["CoreOS", "Container Linux by CoreOS"]
+    - ansible_os_family not in ["CoreOS", "Coreos", "Container Linux by CoreOS", "Flatcar", "Flatcar Container Linux by Kinvolk"]
     - reset_restart_network
   tags:
     - services

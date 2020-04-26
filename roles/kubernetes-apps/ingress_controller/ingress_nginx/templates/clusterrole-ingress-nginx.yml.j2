@@ -1,5 +1,5 @@
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: ingress-nginx
@@ -15,13 +15,13 @@ rules:
     verbs: ["get"]
   - apiGroups: [""]
     resources: ["services"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["extensions"]
+    verbs: ["get", "list", "update", "watch"]
+  - apiGroups: ["extensions","networking.k8s.io"]
     resources: ["ingresses"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["create", "patch"]
-  - apiGroups: ["extensions"]
+  - apiGroups: ["extensions","networking.k8s.io"]
     resources: ["ingresses/status"]
     verbs: ["update"]

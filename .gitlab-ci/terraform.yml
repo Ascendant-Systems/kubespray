@@ -3,13 +3,14 @@
 .terraform_install:
   extends: .job
   before_script:
+    - update-alternatives --install /usr/bin/python python /usr/bin/python3 1
     - ./tests/scripts/rebase.sh
     - ./tests/scripts/testcases_prepare.sh
     - ./tests/scripts/terraform_install.sh
     # Set Ansible config
     - cp ansible.cfg ~/.ansible.cfg
     # Prepare inventory
-    - cp contrib/terraform/$PROVIDER/sample-inventory/cluster.tf .
+    - cp contrib/terraform/$PROVIDER/sample-inventory/cluster.tfvars .
     - ln -s contrib/terraform/$PROVIDER/hosts
     - terraform init contrib/terraform/$PROVIDER
     # Copy SSH keypair
@@ -21,16 +22,21 @@
 .terraform_validate:
   extends: .terraform_install
   stage: unit-tests
+  tags: [light]
   only: ['master', /^pr-.*$/]
   script:
-    - terraform validate -var-file=cluster.tf contrib/terraform/$PROVIDER
+    - terraform validate -var-file=cluster.tfvars contrib/terraform/$PROVIDER
     - terraform fmt -check -diff contrib/terraform/$PROVIDER
 
 .terraform_apply:
   extends: .terraform_install
-  stage: deploy-part2
+  tags: [light]
+  stage: deploy-part3
   when: manual
   only: [/^pr-.*$/]
+  artifacts:
+    paths:
+      - cluster-dump/
   variables:
     ANSIBLE_INVENTORY_UNPARSED_FAILED: "true"
     ANSIBLE_INVENTORY: hosts
@@ -41,56 +47,56 @@
     - tests/scripts/testcases_run.sh
   after_script:
     # Cleanup regardless of exit code
-    - ./tests/scripts/testcases_cleanup.sh
+    - chronic ./tests/scripts/testcases_cleanup.sh
 
 tf-validate-openstack:
   extends: .terraform_validate
   variables:
-    TF_VERSION: 0.11.11
+    TF_VERSION: 0.12.24
     PROVIDER: openstack
     CLUSTER: $CI_COMMIT_REF_NAME
 
 tf-validate-packet:
   extends: .terraform_validate
   variables:
-    TF_VERSION: 0.11.11
+    TF_VERSION: 0.12.24
     PROVIDER: packet
     CLUSTER: $CI_COMMIT_REF_NAME
 
 tf-validate-aws:
   extends: .terraform_validate
   variables:
-    TF_VERSION: 0.11.11
+    TF_VERSION: 0.12.24
     PROVIDER: aws
     CLUSTER: $CI_COMMIT_REF_NAME
 
-tf-packet-ubuntu16-default:
-  extends: .terraform_apply
-  variables:
-    TF_VERSION: 0.11.11
-    PROVIDER: packet
-    CLUSTER: $CI_COMMIT_REF_NAME
-    TF_VAR_number_of_k8s_masters: "1"
-    TF_VAR_number_of_k8s_nodes: "1"
-    TF_VAR_plan_k8s_masters: t1.small.x86
-    TF_VAR_plan_k8s_nodes: t1.small.x86
-    TF_VAR_facility: ewr1
-    TF_VAR_public_key_path: ""
-    TF_VAR_operating_system: ubuntu_16_04
-
-tf-packet-ubuntu18-default:
-  extends: .terraform_apply
-  variables:
-    TF_VERSION: 0.11.11
-    PROVIDER: packet
-    CLUSTER: $CI_COMMIT_REF_NAME
-    TF_VAR_number_of_k8s_masters: "1"
-    TF_VAR_number_of_k8s_nodes: "1"
-    TF_VAR_plan_k8s_masters: t1.small.x86
-    TF_VAR_plan_k8s_nodes: t1.small.x86
-    TF_VAR_facility: ams1
-    TF_VAR_public_key_path: ""
-    TF_VAR_operating_system: ubuntu_18_04
+# tf-packet-ubuntu16-default:
+#   extends: .terraform_apply
+#   variables:
+#     TF_VERSION: 0.12.24
+#     PROVIDER: packet
+#     CLUSTER: $CI_COMMIT_REF_NAME
+#     TF_VAR_number_of_k8s_masters: "1"
+#     TF_VAR_number_of_k8s_nodes: "1"
+#     TF_VAR_plan_k8s_masters: t1.small.x86
+#     TF_VAR_plan_k8s_nodes: t1.small.x86
+#     TF_VAR_facility: ewr1
+#     TF_VAR_public_key_path: ""
+#     TF_VAR_operating_system: ubuntu_16_04
+#
+# tf-packet-ubuntu18-default:
+#   extends: .terraform_apply
+#   variables:
+#     TF_VERSION: 0.12.24
+#     PROVIDER: packet
+#     CLUSTER: $CI_COMMIT_REF_NAME
+#     TF_VAR_number_of_k8s_masters: "1"
+#     TF_VAR_number_of_k8s_nodes: "1"
+#     TF_VAR_plan_k8s_masters: t1.small.x86
+#     TF_VAR_plan_k8s_nodes: t1.small.x86
+#     TF_VAR_facility: ams1
+#     TF_VAR_public_key_path: ""
+#     TF_VAR_operating_system: ubuntu_18_04
 
 .ovh_variables: &ovh_variables
   OS_AUTH_URL: https://auth.cloud.ovh.net/v3
@@ -103,12 +109,23 @@ tf-packet-ubuntu18-default:
   OS_INTERFACE: public
   OS_IDENTITY_API_VERSION: "3"
 
+tf-ovh_cleanup:
+  stage: unit-tests
+  tags: [light]
+  image: python
+  variables:
+    <<: *ovh_variables
+  before_script:
+    - pip install -r scripts/openstack-cleanup/requirements.txt
+  script:
+    - ./scripts/openstack-cleanup/main.py
+
 tf-ovh_ubuntu18-calico:
   extends: .terraform_apply
   when: on_success
   variables:
     <<: *ovh_variables
-    TF_VERSION: 0.11.11
+    TF_VERSION: 0.12.24
     PROVIDER: openstack
     CLUSTER: $CI_COMMIT_REF_NAME
     ANSIBLE_TIMEOUT: "60"
@@ -136,7 +153,7 @@ tf-ovh_coreos-calico:
   when: on_success
   variables:
     <<: *ovh_variables
-    TF_VERSION: 0.11.11
+    TF_VERSION: 0.12.24
     PROVIDER: openstack
     CLUSTER: $CI_COMMIT_REF_NAME
     ANSIBLE_TIMEOUT: "60"

@@ -1,4 +1,14 @@
 ---
+- name: check if fedora coreos
+  stat:
+    path: /run/ostree-booted
+  register: ostree
+
+- name: set is_ostree
+  set_fact:
+    is_ostree: "{{ ostree.stat.exists }}"
+
+
 - name: Fail containerd setup if distribution is not supported
   fail:
     msg: "{{ ansible_distribution }} is not supported by containerd."
@@ -25,6 +35,19 @@
     - facts
 
 - include_tasks: containerd_repo.yml
+  when: not is_ostree
+
+- name: Create containerd service systemd directory if it doesn't exist
+  file:
+    path: /etc/systemd/system/containerd.service.d
+    state: directory
+
+- name: Write containerd proxy drop-in
+  template:
+    src: http-proxy.conf.j2
+    dest: /etc/systemd/system/containerd.service.d/http-proxy.conf
+  notify: restart containerd
+  when: http_proxy is defined or https_proxy is defined
 
 - name: ensure containerd config directory
   file:
@@ -42,33 +65,6 @@
     mode: 0644
   notify: restart containerd
 
-
-- name: ensure containerd repository public key is installed
-  action: "{{ containerd_repo_key_info.pkg_key }}"
-  args:
-    id: "{{ item }}"
-    url: "{{ containerd_repo_key_info.url }}"
-    state: present
-  register: keyserver_task_result
-  until: keyserver_task_result is succeeded
-  retries: 4
-  delay: "{{ retry_stagger | d(3) }}"
-  with_items: "{{ containerd_repo_key_info.repo_keys }}"
-  when:
-    - ansible_os_family in ['Ubuntu', 'Debian']
-    - not is_atomic
-
-- name: ensure containerd repository is enabled
-  action: "{{ containerd_repo_info.pkg_repo }}"
-  args:
-    repo: "{{ item }}"
-    state: present
-  with_items: "{{ containerd_repo_info.repos }}"
-  when:
-    - ansible_os_family in ['Ubuntu', 'Debian']
-    - not is_atomic
-    - containerd_repo_info.repos|length > 0
-
 # This is required to ensure any apt upgrade will not break kubernetes
 - name: Set containerd pin priority to apt_preferences on Debian family
   template:
@@ -78,7 +74,7 @@
     mode: 0644
   when:
     - ansible_os_family in ['Ubuntu', 'Debian']
-    - not is_atomic
+    - not is_ostree
 
 - name: ensure containerd packages are installed
   action: "{{ containerd_package_info.pkg_mgr }}"
@@ -95,13 +91,13 @@
   with_items: "{{ containerd_package_info.pkgs }}"
   notify: restart containerd
   when:
-    - not is_atomic
+    - not is_ostree
     - containerd_package_info.pkgs|length > 0
   ignore_errors: true
 
 - name: Check if runc is installed
   stat:
-    path: /usr/sbin/runc
+    path: "{{ runc_binary }}"
   register: runc_stat
 
 - name: Install runc package if necessary
@@ -116,17 +112,7 @@
   delay: "{{ retry_stagger | d(3) }}"
   notify: restart containerd
   when:
-    - not is_atomic
+    - not is_ostree
     - not runc_stat.stat.exists
 
-- name: Install crictl config
-  template:
-    src: crictl.yaml.j2
-    dest: /etc/crictl.yaml
-    owner: bin
-    mode: 0644
-
-- name: Install crictl completion
-  shell: "{{ bin_dir }}/crictl completion >/etc/bash_completion.d/crictl"
-  ignore_errors: True
-  when: ansible_distribution in ["CentOS","RedHat", "Ubuntu", "Debian"]
+- include_tasks: crictl.yml

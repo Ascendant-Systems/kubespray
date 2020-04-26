@@ -15,6 +15,7 @@ common_required_pkgs:
   - unzip
   - e2fsprogs
   - xfsprogs
+  - ebtables
 
 # Set to true if your network does not support IPv6
 # This maybe necessary for pulling Docker images from
@@ -25,6 +26,7 @@ kube_cert_group: kube-cert
 kube_config_dir: /etc/kubernetes
 kube_cert_dir: "{{ kube_config_dir }}/ssl"
 kube_cert_compat_dir: /etc/kubernetes/pki
+kubelet_flexvolumes_plugins_dir: /usr/libexec/kubernetes/kubelet-plugins/volume/exec
 
 # Container Linux by CoreOS cloud init config file to define /etc/resolv.conf content
 # for hostnet pods and infra needs
@@ -32,8 +34,6 @@ resolveconf_cloud_init_conf: /etc/resolveconf_cloud_init.conf
 
 # All inventory hostnames will be written into each /etc/hosts file.
 populate_inventory_to_hosts_file: true
-
-preinstall_selinux_state: permissive
 
 sysctl_file_path: "/etc/sysctl.d/99-sysctl.conf"
 
@@ -53,3 +53,5 @@ etc_hosts_localhost_entries:
 # Minimal memory requirement in MB for safety checks
 minimal_node_memory_mb: 1024
 minimal_master_memory_mb: 1500
+
+yum_repo_dir: /etc/yum.repos.d
