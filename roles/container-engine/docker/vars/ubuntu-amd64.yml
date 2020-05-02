@@ -4,17 +4,17 @@ docker_kernel_min_version: '3.10'
 # https://download.docker.com/linux/ubuntu/
 docker_versioned_pkg:
   'latest': docker-ce
-  '1.11': docker-engine=1.11.2-0~{{ ansible_distribution_release|lower }}
-  '1.12': docker-engine=1.12.6-0~ubuntu-{{ ansible_distribution_release|lower }}
-  '1.13': docker-engine=1.13.1-0~ubuntu-{{ ansible_distribution_release|lower }}
-  '17.03': docker-ce=17.03.2~ce-0~ubuntu-{{ ansible_distribution_release|lower }}
-  '17.09': docker-ce=17.09.0~ce-0~ubuntu-{{ ansible_distribution_release|lower }}
-  '17.12': docker-ce=17.12.1~ce-0~ubuntu-{{ ansible_distribution_release|lower }}
+  '1.11': docker-engine=1.11.2-0~{{ ubuntu_release|lower }}
+  '1.12': docker-engine=1.12.6-0~ubuntu-{{ ubuntu_release|lower }}
+  '1.13': docker-engine=1.13.1-0~ubuntu-{{ ubuntu_release|lower }}
+  '17.03': docker-ce=17.03.2~ce-0~ubuntu-{{ ubuntu_release|lower }}
+  '17.09': docker-ce=17.09.0~ce-0~ubuntu-{{ ubuntu_release|lower }}
+  '17.12': docker-ce=17.12.1~ce-0~ubuntu-{{ ubuntu_release|lower }}
   '18.06': docker-ce=18.06.2~ce~3-0~ubuntu
-  '18.09': docker-ce=5:18.09.7~3-0~ubuntu-{{ ansible_distribution_release|lower }}
-  '19.03': docker-ce=5:19.03.7~3-0~ubuntu-{{ ansible_distribution_release|lower }}
-  'stable': docker-ce=5:18.09.7~3-0~ubuntu-{{ ansible_distribution_release|lower }}
-  'edge': docker-ce=5:19.03.7~3-0~ubuntu-{{ ansible_distribution_release|lower }}
+  '18.09': docker-ce=5:18.09.7~3-0~ubuntu-{{ ubuntu_release|lower }}
+  '19.03': docker-ce=5:19.03.7~3-0~ubuntu-{{ ubuntu_release|lower }}
+  'stable': docker-ce=5:18.09.7~3-0~ubuntu-{{ ubuntu_release|lower }}
+  'edge': docker-ce=5:19.03.7~3-0~ubuntu-{{ ubuntu_release|lower }}
 
 docker_package_info:
   pkg_mgr: apt
@@ -33,7 +33,7 @@ docker_repo_info:
   repos:
     - >
        deb {{ docker_ubuntu_repo_base_url }}
-       {{ ansible_distribution_release|lower }}
+       {{ ubuntu_release|lower }}
        stable
 
 dockerproject_repo_key_info:
