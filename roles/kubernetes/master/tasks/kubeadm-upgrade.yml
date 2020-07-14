@@ -1,7 +1,7 @@
 ---
 - name: kubeadm | Check api is up
   uri:
-    url: "https://{{ ip | default(fallback_ips[inventory_hostname]) }}:6443/healthz"
+    url: "https://{{ ip | default(fallback_ips[inventory_hostname]) }}:{{ kube_apiserver_port }}/healthz"
     validate_certs: false
   when: inventory_hostname == groups['kube-master']|first
   register: _result
@@ -18,8 +18,8 @@
     --ignore-preflight-errors=all
     --allow-experimental-upgrades
     --allow-release-candidate-upgrades
-    --etcd-upgrade=false
-    {{ (kubeadm_output.stdout is version('v1.16.0', '>=')) | ternary('--certificate-renewal=true', '') }}
+    --etcd-upgrade={{ etcd_kubeadm_enabled | bool | lower }}
+    --certificate-renewal=true
     --force
   register: kubeadm_upgrade
   # Retry is because upload config sometimes fails
@@ -40,8 +40,8 @@
     --ignore-preflight-errors=all
     --allow-experimental-upgrades
     --allow-release-candidate-upgrades
-    --etcd-upgrade=false
-    {{ (kubeadm_output.stdout is version('v1.16.0', '>=')) | ternary('--certificate-renewal=true', '') }}
+    --etcd-upgrade={{ etcd_kubeadm_enabled | bool | lower }}
+    --certificate-renewal=true
     --force
   register: kubeadm_upgrade
   when: inventory_hostname != groups['kube-master']|first

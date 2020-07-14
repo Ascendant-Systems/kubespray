@@ -22,9 +22,6 @@ kubelet_kubelet_cgroups: "/systemd/system.slice"
 ### fail with swap on (default true)
 kubelet_fail_swap_on: true
 
-# Optionally remove kube_proxy installed by kubeadm
-kube_proxy_remove: false
-
 # Reserve this space for kube resources
 kube_memory_reserved: 256M
 kube_cpu_reserved: 100m
@@ -143,3 +140,5 @@ azure_exclude_master_from_standard_lb: true
 azure_disable_outbound_snat: false
 # use instance metadata service where possible
 azure_use_instance_metadata: true
+# use specific Azure API endpoints
+azure_cloud: AzurePublicCloud

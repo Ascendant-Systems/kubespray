@@ -55,5 +55,5 @@
     src: resolvconf.j2
     owner: root
     mode: 0644
-  notify: Preinstall | update resolvconf for Container Linux by CoreOS
+  notify: Preinstall | update resolvconf for Container Linux by CoreOS and Flatcar
   when: ansible_os_family in ["CoreOS", "Coreos", "Container Linux by CoreOS", "Flatcar", "Flatcar Container Linux by Kinvolk"]
