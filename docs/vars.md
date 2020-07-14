@@ -38,11 +38,11 @@ Some variables of note include:
 * *loadbalancer_apiserver* - If defined, all hosts will connect to this
   address instead of localhost for kube-masters and kube-master[0] for
   kube-nodes. See more details in the
-  [HA guide](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/ha-mode.md).
+  [HA guide](/docs/ha-mode.md).
 * *loadbalancer_apiserver_localhost* - makes all hosts to connect to
   the apiserver internally load balanced endpoint. Mutual exclusive to the
   `loadbalancer_apiserver`. See more details in the
-  [HA guide](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/ha-mode.md).
+  [HA guide](/docs/ha-mode.md).
 
 ## Cluster variables
 
@@ -99,6 +99,7 @@ variables to match your requirements.
   addition to Kubespray deployed DNS
 * *nameservers* - Array of DNS servers configured for use by hosts
 * *searchdomains* - Array of up to 4 search domains
+* *dns_etchosts* - Content of hosts file for coredns and nodelocaldns
 
 For more information, see [DNS
 Stack](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/dns-stack.md).
@@ -169,12 +170,12 @@ in the form of dicts of key-value pairs of configuration parameters that will be
 
 ```yml
 kubelet_config_extra_args:
-  EvictionHard:
-    memory.available: "<100Mi"
-  EvictionSoftGracePeriod:
+  evictionHard:
+    memory.available: "100Mi"
+  evictionSoftGracePeriod:
     memory.available: "30s"
-  EvictionSoft:
-    memory.available: "<300Mi"
+  evictionSoft:
+    memory.available: "300Mi"
 ```
 
 The possible vars are:
@@ -182,7 +183,7 @@ The possible vars are:
 * *kubelet_config_extra_args*
 * *kubelet_node_config_extra_args*
 
-Previously, the same paramaters could be passed as flags to kubelet binary with the following vars:
+Previously, the same parameters could be passed as flags to kubelet binary with the following vars:
 
 * *kubelet_custom_flags*
 * *kubelet_node_custom_flags*

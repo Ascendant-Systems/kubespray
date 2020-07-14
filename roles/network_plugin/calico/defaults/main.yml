@@ -43,6 +43,9 @@ calico_upgrade_url: "https://github.com/projectcalico/calico-upgrade/releases/do
 # Set the agent log level. Can be debug, warning, info or fatal
 calico_loglevel: info
 
+# Enable or disable usage report to 'usage.projectcalico.org'
+calico_usage_reporting: false
+
 # Should calico ignore kernel's RPF check setting,
 # see https://github.com/projectcalico/felix/blob/ab8799eaea66627e5db7717e62fca61fd9c08646/python/calico/felix/config.py#L198
 calico_node_ignorelooserpf: false
@@ -53,8 +56,8 @@ calico_healthhost: "localhost"
 # Configure time in seconds that calico will wait for the iptables lock
 calico_iptables_lock_timeout_secs: 10
 
-# Choose Calico iptables backend: "Iptables" or "NFT" (FELIX_IPTABLESBACKEND)
-calico_iptables_backend: "Iptables"
+# Choose Calico iptables backend: "Legacy", "Auto" or "NFT" (FELIX_IPTABLESBACKEND)
+calico_iptables_backend: "Legacy"
 
 # If you want to use non default IP_AUTODETECTION_METHOD for calico node set this option to one of:
 # * can-reach=DESTINATION
@@ -84,9 +87,7 @@ typha_replicas: 1
 # Set max typha connections
 typha_max_connections_lower_limit: 300
 
-
 # Generate certifcates for typha<->calico-node communication
 typha_secure: false
-
 
 calico_feature_control: {}
