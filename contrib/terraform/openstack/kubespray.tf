@@ -27,6 +27,8 @@ module "ips" {
   network_name                  = var.network_name
   router_id                     = module.network.router_id
   k8s_nodes                     = var.k8s_nodes
+  k8s_master_fips               = var.k8s_master_fips
+  router_internal_port_id       = module.network.router_internal_port_id
 }
 
 module "compute" {
@@ -51,6 +53,7 @@ module "compute" {
   node_root_volume_size_in_gb                  = var.node_root_volume_size_in_gb
   gfs_root_volume_size_in_gb                   = var.gfs_root_volume_size_in_gb
   gfs_volume_size_in_gb                        = var.gfs_volume_size_in_gb
+  master_volume_type                           = var.master_volume_type
   public_key_path                              = var.public_key_path
   image                                        = var.image
   image_gfs                                    = var.image_gfs
@@ -73,10 +76,13 @@ module "compute" {
   k8s_allowed_egress_ips                       = var.k8s_allowed_egress_ips
   supplementary_master_groups                  = var.supplementary_master_groups
   supplementary_node_groups                    = var.supplementary_node_groups
+  master_allowed_ports                         = var.master_allowed_ports
   worker_allowed_ports                         = var.worker_allowed_ports
   wait_for_floatingip                          = var.wait_for_floatingip
   use_access_ip                                = var.use_access_ip
   use_server_groups                            = var.use_server_groups
+  extra_sec_groups                             = var.extra_sec_groups
+  extra_sec_groups_name                        = var.extra_sec_groups_name
 
   network_id = module.network.router_id
 }

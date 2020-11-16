@@ -17,9 +17,7 @@
     --config={{ kube_config_dir }}/kubeadm-config.yaml
     --ignore-preflight-errors=all
     --allow-experimental-upgrades
-    --allow-release-candidate-upgrades
     --etcd-upgrade={{ etcd_kubeadm_enabled | bool | lower }}
-    --certificate-renewal=true
     --force
   register: kubeadm_upgrade
   # Retry is because upload config sometimes fails
@@ -27,10 +25,10 @@
   until: kubeadm_upgrade.rc == 0
   when: inventory_hostname == groups['kube-master']|first
   failed_when: kubeadm_upgrade.rc != 0 and "field is immutable" not in kubeadm_upgrade.stderr
+  environment:
+    PATH: "{{ bin_dir }}:{{ ansible_env.PATH }}"
   notify: Master | restart kubelet
 
-# FIXME: https://github.com/kubernetes/kubeadm/issues/1498 remove stdout_lines
-# check after issue is fixed
 - name: kubeadm | Upgrade other masters
   command: >-
     timeout -k 600s 600s
@@ -39,16 +37,15 @@
     --config={{ kube_config_dir }}/kubeadm-config.yaml
     --ignore-preflight-errors=all
     --allow-experimental-upgrades
-    --allow-release-candidate-upgrades
     --etcd-upgrade={{ etcd_kubeadm_enabled | bool | lower }}
-    --certificate-renewal=true
     --force
   register: kubeadm_upgrade
   when: inventory_hostname != groups['kube-master']|first
   failed_when:
     - kubeadm_upgrade.rc != 0
     - '"field is immutable" not in kubeadm_upgrade.stderr'
-    - kubeadm_upgrade.stdout_lines | length > 1
+  environment:
+    PATH: "{{ bin_dir }}:{{ ansible_env.PATH }}"
   notify: Master | restart kubelet
 
 - name: kubeadm | clean kubectl cache to refresh api types
