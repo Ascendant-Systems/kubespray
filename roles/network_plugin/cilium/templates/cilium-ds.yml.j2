@@ -20,6 +20,16 @@ spec:
       labels:
         k8s-app: cilium
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: k8s-app
+                operator: In
+                values:
+                - cilium
+            topologyKey: kubernetes.io/hostname
       containers:
       - args:
         - --kvstore=etcd
@@ -43,6 +53,12 @@ spec:
               fieldPath: metadata.namespace
         - name: CILIUM_CLUSTERMESH_CONFIG
           value: /var/lib/cilium/clustermesh/
+{% if cilium_kube_proxy_replacement == 'strict' %}
+        - name: KUBERNETES_SERVICE_HOST
+          value: "{{ kube_apiserver_global_endpoint | urlsplit('hostname') }}"
+        - name: KUBERNETES_SERVICE_PORT
+          value: "{{ kube_apiserver_global_endpoint | urlsplit('port') }}"
+{% endif %}
         image: "{{cilium_image_repo}}:{{cilium_image_tag}}"
         imagePullPolicy: {{ k8s_image_pull_policy }}
         resources:
@@ -79,11 +95,19 @@ spec:
           successThreshold: 1
           timeoutSeconds: 5
         name: cilium-agent
-{% if cilium_enable_prometheus %}
+{% if cilium_enable_prometheus or cilium_enable_hubble_metrics %}
         ports:
+{% endif %}
+{% if cilium_enable_prometheus %}
         - containerPort: 9090
           hostPort: 9090
           name: prometheus
+          protocol: TCP
+{% endif %}
+{% if cilium_enable_hubble_metrics %}
+        - containerPort: 9091
+          hostPort: 9091
+          name: hubble-metrics
           protocol: TCP
 {% endif %}
         readinessProbe:
@@ -180,6 +204,10 @@ spec:
           name: bpf-maps
         - mountPath: /var/run/cilium
           name: cilium-run
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
       priorityClassName: system-node-critical
       restartPolicy: Always
       serviceAccount: cilium

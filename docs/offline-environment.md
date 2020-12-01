@@ -10,10 +10,11 @@ In case your servers don't have access to internet (for example when deploying o
 
 ## Configure Inventory
 
-Once all artifacts are accessible from your internal network, **adjust** the following variables in your inventory to match your environment:
+Once all artifacts are accessible from your internal network, **adjust** the following variables in [your inventory](/inventory/sample/group_vars/k8s-cluster/offline.yml) to match your environment:
 
 ```yaml
 # Registry overrides
+kube_image_repo: "{{ registry_host }}"
 gcr_image_repo: "{{ registry_host }}"
 docker_image_repo: "{{ registry_host }}"
 quay_image_repo: "{{ registry_host }}"
@@ -33,7 +34,7 @@ calicoctl_download_url: "{{ files_repo }}/kubernetes/calico/{{ calico_ctl_versio
 docker_rh_repo_base_url: "{{ yum_repo }}/docker-ce/$releasever/$basearch"
 docker_rh_repo_gpgkey: "{{ yum_repo }}/docker-ce/gpg"
 ## Containerd
-extras_rh_repo_base_url: "{{ yum_repo }}/centos/$releasever/extras/$basearch"
+extras_rh_repo_base_url: "{{ yum_repo }}/centos/{{ ansible_distribution_major_version }}/extras/$basearch"
 extras_rh_repo_gpgkey: "{{ yum_repo }}/containerd/gpg"
 
 # Fedora
@@ -76,6 +77,13 @@ If you use the settings like the one above, you'll need to define in your invent
 
 ## Install Kubespray Python Packages
 
+### Recommended way: Kubespray Container Image
+
+The easiest way is to use [kubespray container image](quay.io/kubespray/kubespray) as all the required packages are baked in the image.
+Just copy the container image in your private container image registry and you are all set!
+
+### Manual installation
+
 Look at the `requirements.txt` file and check if your OS provides all packages out-of-the-box (Using the OS package manager). For those missing, you need to either use a proxy that has Internet access (typically from a DMZ) or setup a PyPi server in your network that will host these packages.
 
 If you're using a HTTP(S) proxy to download your python packages:
@@ -100,6 +108,12 @@ Once all artifacts are in place and your inventory properly set up, you can run 
 
 ```bash
 ansible-playbook -i inventory/my_airgap_cluster/hosts.yaml -b cluster.yml
+```
+
+If you use [Kubespray Container Image](#recommended-way:-kubespray-container-image), you can mount your inventory inside the container:
+
+```bash
+docker run --rm -it -v path_to_inventory/my_airgap_cluster:inventory/my_airgap_cluster myprivateregisry.com/kubespray/kubespray:v2.14.0 ansible-playbook -i inventory/my_airgap_cluster/hosts.yaml -b cluster.yml
 ```
 
 ## Please Note: Offline installation doesn't support CRI-O container runtime at the moment (see [this issue](https://github.com/kubernetes-sigs/kubespray/issues/6233))
