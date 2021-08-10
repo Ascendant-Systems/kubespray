@@ -5,22 +5,26 @@
     state: stopped
   with_items:
     - kubelet
-    - vault
   failed_when: false
   tags:
     - services
 
 - name: reset | remove services
   file:
-    path: "/etc/systemd/system/{{ item }}.service"
+    path: "/etc/systemd/system/{{ item }}"
     state: absent
   with_items:
-    - kubelet
-    - vault
-    - calico-node
+    - kubelet.service
+    - calico-node.service
+    - containerd.service.d/http-proxy.conf
+    - crio.service.d/http-proxy.conf
+    - k8s-certs-renew.service
+    - k8s-certs-renew.timer
   register: services_removed
   tags:
     - services
+    - containerd
+    - crio
 
 - name: reset | remove docker dropins
   file:
@@ -30,6 +34,7 @@
     - docker-dns.conf
     - docker-options.conf
     - http-proxy.conf
+    - docker-orphan-cleanup.conf
   register: docker_dropins_removed
   tags:
     - docker
@@ -59,21 +64,16 @@
   tags:
     - docker
 
-- name: reset | stop all cri containers
-  shell: "set -o pipefail && {{ bin_dir }}/crictl ps -aq | xargs -r {{ bin_dir }}/crictl -t 60s stop"
-  args:
-    executable: /bin/bash
-  register: remove_all_cri_containers
-  retries: 5
-  until: remove_all_cri_containers.rc == 0
-  delay: 5
-  tags:
-    - crio
-    - containerd
-  when: container_manager in ["crio", "containerd"]
+- name: reset | check if crictl is present
+  stat:
+    path: "{{ bin_dir }}/crictl"
+    get_attributes: no
+    get_checksum: no
+    get_mime: no
+  register: crictl
 
-- name: reset | remove all cri containers
-  shell: "set -o pipefail && {{ bin_dir }}/crictl ps -aq | xargs -r {{ bin_dir }}/crictl -t 60s rm"
+- name: reset | stop all cri containers
+  shell: "set -o pipefail && {{ bin_dir }}/crictl ps -q | xargs -r {{ bin_dir }}/crictl -t 60s stop"
   args:
     executable: /bin/bash
   register: remove_all_cri_containers
@@ -83,7 +83,24 @@
   tags:
     - crio
     - containerd
-  when: container_manager in ["crio", "containerd"] and deploy_container_engine|default(true)
+  when:
+    - crictl.stat.exists
+    - container_manager in ["crio", "containerd"]
+  ignore_errors: true  # noqa ignore-errors
+
+- name: reset | force remove all cri containers
+  command: "{{ bin_dir }}/crictl rm -a -f"
+  register: remove_all_cri_containers
+  retries: 5
+  until: remove_all_cri_containers.rc == 0
+  delay: 5
+  tags:
+    - crio
+    - containerd
+  when:
+    - crictl.stat.exists
+    - container_manager in ["crio", "containerd"]
+    - deploy_container_engine|default(true)
 
 - name: reset | stop and disable crio service
   service:
@@ -109,18 +126,26 @@
   until: remove_all_cri_containers.rc == 0
   delay: 5
   tags: [ containerd ]
-  when: container_manager == "containerd"
+  when:
+    - crictl.stat.exists
+    - container_manager == "containerd"
+  ignore_errors: true  # noqa ignore-errors
 
-- name: reset | remove all cri pods
-  shell: "set -o pipefail && {{ bin_dir }}/crictl pods -q | xargs -r {{ bin_dir }}/crictl -t 60s rmp"
-  args:
-    executable: /bin/bash
-  register: remove_all_cri_containers
-  retries: 5
-  until: remove_all_cri_containers.rc == 0
-  delay: 5
-  tags: [ containerd ]
-  when: container_manager == "containerd"
+- block:
+    - name: reset | force remove all cri pods
+      command: "{{ bin_dir }}/crictl rmp -a -f"
+      register: remove_all_cri_containers
+      retries: 5
+      until: remove_all_cri_containers.rc == 0
+      delay: 5
+      tags: [ containerd ]
+      when:
+        - crictl.stat.exists
+        - container_manager == "containerd"
+
+  rescue:
+    - name: reset | force remove all cri pods (rescue)
+      shell: "ip netns list | cut -d' ' -f 1 | xargs -n1 ip netns delete && {{ bin_dir }}/crictl rmp -a -f"
 
 - name: reset | stop etcd services
   service:
@@ -174,18 +199,23 @@
     - filter
     - nat
     - mangle
+    - raw
   when: flush_iptables|bool
   tags:
     - iptables
 
 - name: Clear IPVS virtual server table
   command: "ipvsadm -C"
+  ignore_errors: true  # noqa ignore-errors
   when:
-    - kube_proxy_mode == 'ipvs' and inventory_hostname in groups['k8s-cluster']
+    - kube_proxy_mode == 'ipvs' and inventory_hostname in groups['k8s_cluster']
 
 - name: reset | check kube-ipvs0 network device
   stat:
     path: /sys/class/net/kube-ipvs0
+    get_attributes: no
+    get_checksum: no
+    get_mime: no
   register: kube_ipvs0
 
 - name: reset | Remove kube-ipvs0
@@ -197,6 +227,9 @@
 - name: reset | check nodelocaldns network device
   stat:
     path: /sys/class/net/nodelocaldns
+    get_attributes: no
+    get_checksum: no
+    get_mime: no
   register: nodelocaldns_device
 
 - name: reset | Remove nodelocaldns
@@ -225,6 +258,8 @@
     - /etc/dnsmasq.d-available
     - /etc/etcd.env
     - /etc/calico
+    - /etc/NetworkManager/conf.d/calico.conf
+    - /etc/NetworkManager/conf.d/k8s.conf
     - /etc/weave.env
     - /opt/cni
     - /etc/dhcp/dhclient.d/zdnsupdate.sh
@@ -234,14 +269,10 @@
     - /run/kubernetes
     - /usr/local/share/ca-certificates/etcd-ca.crt
     - /usr/local/share/ca-certificates/kube-ca.crt
-    - /usr/local/share/ca-certificates/vault-ca.crt
     - /etc/ssl/certs/etcd-ca.pem
     - /etc/ssl/certs/kube-ca.pem
-    - /etc/ssl/certs/vault-ca.crt
     - /etc/pki/ca-trust/source/anchors/etcd-ca.crt
     - /etc/pki/ca-trust/source/anchors/kube-ca.crt
-    - /etc/pki/ca-trust/source/anchors/vault-ca.crt
-    - /etc/vault
     - /var/log/pods/
     - "{{ bin_dir }}/kubelet"
     - "{{ bin_dir }}/etcd-scripts"
@@ -251,23 +282,31 @@
     - "{{ bin_dir }}/kubernetes-scripts"
     - "{{ bin_dir }}/kubectl"
     - "{{ bin_dir }}/kubeadm"
-    - "{{ bin_dir }}/hyperkube"
     - "{{ bin_dir }}/helm"
     - "{{ bin_dir }}/calicoctl"
     - "{{ bin_dir }}/calicoctl.sh"
     - "{{ bin_dir }}/calico-upgrade"
     - "{{ bin_dir }}/weave"
     - "{{ bin_dir }}/crictl"
+    - "{{ bin_dir }}/nerdctl"
     - "{{ bin_dir }}/netctl"
+    - "{{ bin_dir }}/k8s-certs-renew.sh"
     - /var/lib/cni
-    - /etc/vault
     - /etc/openvswitch
     - /run/openvswitch
     - /var/lib/kube-router
     - /var/lib/calico
     - /etc/cilium
     - /run/calico
-  ignore_errors: yes
+    - /etc/bash_completion.d/kubectl.sh
+    - /etc/bash_completion.d/crictl
+    - /etc/bash_completion.d/nerdctl
+    - /etc/bash_completion.d/krew
+    - "{{ krew_root_dir | default('/usr/local/krew') }}"
+    - /etc/modules-load.d/kube_proxy-ipvs.conf
+    - /etc/modules-load.d/kubespray-br_netfilter.conf
+    - /usr/libexec/kubernetes
+  ignore_errors: true  # noqa ignore-errors
   tags:
     - files
 
@@ -294,7 +333,7 @@
     - dns
 
 - name: reset | include file with reset tasks specific to the network_plugin if exists
-  include_tasks: "{{ (role_path + '/../network_plugin/' + kube_network_plugin + '/tasks/reset.yml') | realpath  }}"
+  include_tasks: "{{ (role_path,'../network_plugin',kube_network_plugin,'tasks/reset.yml') | path_join | realpath  }}"
   when:
     - kube_network_plugin in ['flannel', 'cilium', 'kube-router', 'calico']
   tags:
@@ -304,7 +343,7 @@
   service:
     name: >-
       {% if ansible_os_family == "RedHat" -%}
-      {%- if ansible_distribution_major_version|int == 8 -%}
+      {%- if ansible_distribution_major_version|int == 8 or is_fedora_coreos -%}
       NetworkManager
       {%- else -%}
       network

@@ -13,5 +13,4 @@ typha_enabled: true
 calico_backend: kdd
 typha_secure: true
 
-# Test helm 2 install
-helm_version: v2.16.7
+auto_renew_certificates: true
