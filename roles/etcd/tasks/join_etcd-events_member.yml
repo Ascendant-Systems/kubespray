@@ -17,7 +17,7 @@
     etcd_events_peer_addresses: >-
       {% for host in groups['etcd'] -%}
         {%- if hostvars[host]['etcd_events_member_in_cluster'].rc == 0 -%}
-          {{ "etcd"+loop.index|string }}=https://{{ hostvars[host].access_ip | default(hostvars[host].ip | default(fallback_ips[host])) }}:2382,
+          {{ "etcd"+loop.index|string }}=https://{{ hostvars[host].etcd_events_access_address | default(hostvars[host].ip | default(fallback_ips[host])) }}:2382,
         {%- endif -%}
         {%- if loop.last -%}
           {{ etcd_member_name }}={{ etcd_events_peer_url }}
@@ -25,7 +25,7 @@
       {%- endfor -%}
 
 - name: Join Member | Ensure member is in etcd-events cluster
-  shell: "set -o pipefail && {{ bin_dir }}/etcdctl member list | grep -q {{ etcd_events_access_address }}"
+  shell: "set -o pipefail && {{ bin_dir }}/etcdctl member list | grep {{ etcd_events_access_address }} >/dev/null"
   args:
     executable: /bin/bash
   register: etcd_events_member_in_cluster
