@@ -52,9 +52,9 @@
     kubeadm_token: "{{ temp_token.stdout }}"
   when: kubeadm_token is not defined
 
-- name: Set kubeadm api version to v1beta2
+- name: Set kubeadm api version to v1beta3
   set_fact:
-    kubeadmConfig_api_version: v1beta2
+    kubeadmConfig_api_version: v1beta3
 
 - name: Create kubeadm client config
   template:
@@ -63,6 +63,21 @@
     backup: yes
     mode: 0640
   when: not is_kube_master
+
+- name: kubeadm | Create directory to store kubeadm patches
+  file:
+    path: "{{ kubeadm_patches.dest_dir }}"
+    state: directory
+    mode: 0640
+  when: kubeadm_patches is defined and kubeadm_patches.enabled
+
+- name: kubeadm | Copy kubeadm patches from inventory files
+  copy:
+    src: "{{ kubeadm_patches.source_dir }}/"
+    dest: "{{ kubeadm_patches.dest_dir }}"
+    owner: "root"
+    mode: 0644
+  when: kubeadm_patches is defined and kubeadm_patches.enabled
 
 - name: Join to cluster if needed
   environment:
@@ -78,6 +93,7 @@
         --ignore-preflight-errors=DirAvailable--etc-kubernetes-manifests
         --skip-phases={{ kubeadm_join_phases_skip | join(',') }}
       register: kubeadm_join
+      changed_when: kubeadm_join is success
 
   rescue:
 
@@ -89,6 +105,7 @@
         --ignore-preflight-errors=all
         --skip-phases={{ kubeadm_join_phases_skip | join(',') }}
       register: kubeadm_join
+      changed_when: kubeadm_join is success
 
   always:
 
@@ -153,7 +170,7 @@
 - name: Extract etcd certs from control plane if using etcd kubeadm mode
   include_tasks: kubeadm_etcd_node.yml
   when:
-    - etcd_kubeadm_enabled
+    - etcd_deployment_type == "kubeadm"
     - inventory_hostname not in groups['kube_control_plane']
     - kube_network_plugin in ["calico", "flannel", "canal", "cilium"] or cilium_deploy_additionally | default(false) | bool
     - kube_network_plugin != "calico" or calico_datastore == "etcd"

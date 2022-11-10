@@ -21,6 +21,8 @@
         - "{{ ansible_distribution|lower }}-{{ ansible_distribution_major_version|lower|replace('/', '_') }}.yml"
         - "{{ ansible_distribution|lower }}-{{ host_architecture }}.yml"
         - "{{ ansible_distribution|lower }}.yml"
+        - "{{ ansible_distribution.split(' ')[0]|lower }}.yml"
+        - "{{ ansible_os_family|lower }}-{{ ansible_distribution_major_version|lower|replace('/', '_') }}.yml"
         - "{{ ansible_os_family|lower }}-{{ host_architecture }}.yml"
         - "{{ ansible_os_family|lower }}.yml"
         - defaults.yml
@@ -69,7 +71,7 @@
     mode: 0644
   when: ansible_distribution == "Fedora" and not is_ostree
 
-- name: Configure docker repository on RedHat/CentOS/Oracle/AlmaLinux Linux
+- name: Configure docker repository on RedHat/CentOS/OracleLinux/AlmaLinux/KylinLinux
   template:
     src: "rh_docker.repo.j2"
     dest: "{{ yum_repo_dir }}/docker-ce.repo"
@@ -99,6 +101,7 @@
       update_cache: true
     dnf:
       enablerepo: "{{ docker_package_info.enablerepo | default(omit) }}"
+      disablerepo: "{{ docker_package_info.disablerepo | default(omit) }}"
     yum:
       enablerepo: "{{ docker_package_info.enablerepo | default(omit) }}"
     zypper:

@@ -10,5 +10,9 @@ dashboard_namespace: "kube-dashboard"
 dashboard_enabled: true
 loadbalancer_apiserver_type: haproxy
 
-# required
-calico_iptables_backend: "Auto"
+# NTP mangement
+ntp_enabled: true
+ntp_timezone: Etc/UTC
+ntp_manage_config: true
+ntp_tinker_panic: true
+ntp_force_sync_immediately: true

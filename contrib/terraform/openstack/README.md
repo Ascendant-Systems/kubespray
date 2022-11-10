@@ -17,9 +17,10 @@ most modern installs of OpenStack that support the basic services.
 - [ELASTX](https://elastx.se/)
 - [EnterCloudSuite](https://www.entercloudsuite.com/)
 - [FugaCloud](https://fuga.cloud/)
-- [Open Telekom Cloud](https://cloud.telekom.de/) : requires to set the variable `wait_for_floatingip = "true"` in your cluster.tfvars
+- [Open Telekom Cloud](https://cloud.telekom.de/)
 - [OVH](https://www.ovh.com/)
 - [Rackspace](https://www.rackspace.com/)
+- [Safespring](https://www.safespring.com)
 - [Ultimum](https://ultimum.io/)
 - [VexxHost](https://vexxhost.com/)
 - [Zetta](https://www.zetta.io/)
@@ -247,6 +248,7 @@ For your cluster, edit `inventory/$CLUSTER/cluster.tfvars`.
 |`cluster_name` | All OpenStack resources will use the Terraform variable`cluster_name` (default`example`) in their name to make it easier to track. For example the first compute resource will be named`example-kubernetes-1`. |
 |`az_list` | List of Availability Zones available in your OpenStack cluster. |
 |`network_name` | The name to be given to the internal network that will be generated |
+|`use_existing_network`| Use an existing network with the name of `network_name`. `false` by default |
 |`network_dns_domain` | (Optional) The dns_domain for the internal network that will be generated |
 |`dns_nameservers`| An array of DNS name server names to be used by hosts in the internal subnet. |
 |`floatingip_pool` | Name of the pool from which floating IPs will be allocated |
@@ -268,10 +270,10 @@ For your cluster, edit `inventory/$CLUSTER/cluster.tfvars`.
 |`supplementary_node_groups` | To add ansible groups to the nodes, such as `kube_ingress` for running ingress controller pods, empty by default. |
 |`bastion_allowed_remote_ips` | List of CIDR allowed to initiate a SSH connection, `["0.0.0.0/0"]` by default |
 |`master_allowed_remote_ips` | List of CIDR blocks allowed to initiate an API connection, `["0.0.0.0/0"]` by default |
+|`bastion_allowed_ports` | List of ports to open on bastion node, `[]` by default |
 |`k8s_allowed_remote_ips` | List of CIDR allowed to initiate a SSH connection, empty by default |
 |`worker_allowed_ports` | List of ports to open on worker nodes, `[{ "protocol" = "tcp", "port_range_min" = 30000, "port_range_max" = 32767, "remote_ip_prefix" = "0.0.0.0/0"}]` by default |
 |`master_allowed_ports` | List of ports to open on master nodes, expected format is `[{ "protocol" = "tcp", "port_range_min" = 443, "port_range_max" = 443, "remote_ip_prefix" = "0.0.0.0/0"}]`, empty by default |
-|`wait_for_floatingip` | Let Terraform poll the instance until the floating IP has been associated, `false` by default. |
 |`node_root_volume_size_in_gb` | Size of the root volume for nodes, 0 to use ephemeral storage |
 |`master_root_volume_size_in_gb` | Size of the root volume for masters, 0 to use ephemeral storage |
 |`master_volume_type` | Volume type of the root volume for control_plane, 'Default' by default |
@@ -284,14 +286,17 @@ For your cluster, edit `inventory/$CLUSTER/cluster.tfvars`.
 |`etcd_server_group_policy` | Enable and use openstack nova servergroups for etcd with set policy, default: "" (disabled) |
 |`use_access_ip` | If 1, nodes with floating IPs will transmit internal cluster traffic via floating IPs; if 0 private IPs will be used instead. Default value is 1. |
 |`port_security_enabled` | Allow to disable port security by setting this to `false`. `true` by default |
+|`force_null_port_security` | Set `null` instead of `true` or `false` for `port_security`. `false` by default |
 |`k8s_nodes` | Map containing worker node definition, see explanation below |
+|`k8s_masters` | Map containing master node definition, see explanation for k8s_nodes and `sample-inventory/cluster.tfvars` |
 
 ##### k8s_nodes
 
 Allows a custom definition of worker nodes giving the operator full control over individual node flavor and
 availability zone placement. To enable the use of this mode set the `number_of_k8s_nodes` and
 `number_of_k8s_nodes_no_floating_ip` variables to 0. Then define your desired worker node configuration
-using the `k8s_nodes` variable.
+using the `k8s_nodes` variable. The `az`, `flavor` and `floating_ip` parameters are mandatory.
+The optional parameter `extra_groups` (a comma-delimited string) can be used to define extra inventory group memberships for specific nodes.
 
 For example:
 
@@ -311,6 +316,7 @@ k8s_nodes = {
     "az" = "sto3"
     "flavor" = "83d8b44a-26a0-4f02-a981-079446926445"
     "floating_ip" = true
+    "extra_groups" = "calico_rr"
   }
 }
 ```

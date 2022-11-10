@@ -4,10 +4,11 @@ aliases:
     - chadswen
     - mirwan
     - miouge1
-    - woopstar
     - luckysb
     - floryut
     - oomichi
+    - cristicalin
+    - liupeng0518
   kubespray-reviewers:
     - holmsten
     - bozzo
@@ -15,7 +16,10 @@ aliases:
     - oomichi
     - jayonlau
     - cristicalin
+    - liupeng0518
+    - yankay
   kubespray-emeritus_approvers:
     - riverzhang
     - atoms
     - ant31
+    - woopstar

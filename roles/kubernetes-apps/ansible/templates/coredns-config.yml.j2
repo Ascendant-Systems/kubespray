@@ -13,6 +13,11 @@ data:
     {{ block['zones'] | join(' ') }} {
         log
         errors
+{% if block['rewrite'] is defined and block['rewrite']|length > 0 %}
+{% for rewrite_match in block['rewrite'] %}
+        rewrite {{ rewrite_match }}
+{% endfor %}
+{% endif %}
         forward . {{ block['nameservers'] | join(' ') }}
         loadbalance
         cache {{ block['cache'] | default(5) }}
@@ -41,19 +46,19 @@ data:
 {% endif %}
         }
         prometheus :9153
-{% if upstream_dns_servers is defined and upstream_dns_servers|length > 0 %}
-        forward . {{ upstream_dns_servers|join(' ') }} {
+        forward . {{ upstream_dns_servers|join(' ') if upstream_dns_servers is defined and upstream_dns_servers|length > 0 else '/etc/resolv.conf' }} {
           prefer_udp
-        }
-{% else %}
-        forward . /etc/resolv.conf {
-          prefer_udp
-        }
+          max_concurrent 1000
+{% if dns_upstream_forward_extra_opts is defined %}
+{% for optname, optvalue in dns_upstream_forward_extra_opts.items() %}
+          {{ optname }} {{ optvalue }}
+{% endfor %}
 {% endif %}
+        }
 {% if enable_coredns_k8s_external %}
         k8s_external {{ coredns_k8s_external_zone }}
 {% endif %}
-        cache 30
+        {{ coredns_default_zone_cache_block | indent(width=8, first=False) }}
         loop
         reload
         loadbalance

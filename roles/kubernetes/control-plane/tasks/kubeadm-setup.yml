@@ -25,7 +25,7 @@
 
 - name: kubeadm | aggregate all SANs
   set_fact:
-    apiserver_sans: "{{ (sans_base + groups['kube_control_plane'] + sans_lb + sans_lb_ip + sans_supp + sans_access_ip + sans_ip + sans_address + sans_override + sans_hostname + sans_fqdn) | unique }}"
+    apiserver_sans: "{{ (sans_base + groups['kube_control_plane'] + sans_lb + sans_lb_ip + sans_supp + sans_access_ip + sans_ip + sans_address + sans_override + sans_hostname + sans_fqdn + sans_kube_vip_address) | unique }}"
   vars:
     sans_base:
       - "kubernetes"
@@ -44,6 +44,7 @@
     sans_override: "{{ [kube_override_hostname] if kube_override_hostname else [] }}"
     sans_hostname: "{{ groups['kube_control_plane'] | map('extract', hostvars, ['ansible_hostname']) | list | select('defined') | list }}"
     sans_fqdn: "{{ groups['kube_control_plane'] | map('extract', hostvars, ['ansible_fqdn']) | list | select('defined') | list }}"
+    sans_kube_vip_address: "{{ [kube_vip_address] if kube_vip_address is defined and kube_vip_address else [] }}"
   tags: facts
 
 - name: Create audit-policy directory
@@ -73,15 +74,39 @@
     kubeadm_config_api_fqdn: "{{ apiserver_loadbalancer_domain_name|default('lb-apiserver.kubernetes.local') }}"
   when: loadbalancer_apiserver is defined
 
-- name: Set kubeadm api version to v1beta2
+- name: Set kubeadm api version to v1beta3
   set_fact:
-    kubeadmConfig_api_version: v1beta2
+    kubeadmConfig_api_version: v1beta3
 
 - name: kubeadm | Create kubeadm config
   template:
     src: "kubeadm-config.{{ kubeadmConfig_api_version }}.yaml.j2"
     dest: "{{ kube_config_dir }}/kubeadm-config.yaml"
     mode: 0640
+
+- name: kubeadm | Create directory to store admission control configurations
+  file:
+    path: "{{ kube_config_dir }}/admission-controls"
+    state: directory
+    mode: 0640
+  when: kube_apiserver_admission_control_config_file
+
+- name: kubeadm | Push admission control config file
+  template:
+    src: "admission-controls.yaml.j2"
+    dest: "{{ kube_config_dir }}/admission-controls/admission-controls.yaml"
+    mode: 0640
+  when: kube_apiserver_admission_control_config_file
+
+- name: kubeadm | Push admission control config files
+  template:
+    src: "{{ item|lower }}.yaml.j2"
+    dest: "{{ kube_config_dir }}/admission-controls/{{ item|lower }}.yaml"
+    mode: 0640
+  when:
+    - kube_apiserver_admission_control_config_file
+    - item in kube_apiserver_admission_plugins_needs_configuration
+  loop: "{{ kube_apiserver_enable_admission_plugins }}"
 
 - name: kubeadm | Check if apiserver.crt contains all needed SANs
   shell: |
@@ -101,6 +126,7 @@
   changed_when: "'NEED-RENEW' in apiserver_sans_check.stdout"
   when:
     - kubeadm_already_run.stat.exists
+    - not kube_external_ca_mode
 
 - name: kubeadm | regenerate apiserver cert 1/2
   file:
@@ -112,6 +138,7 @@
   when:
     - kubeadm_already_run.stat.exists
     - apiserver_sans_check.changed
+    - not kube_external_ca_mode
 
 - name: kubeadm | regenerate apiserver cert 2/2
   command: >-
@@ -121,6 +148,22 @@
   when:
     - kubeadm_already_run.stat.exists
     - apiserver_sans_check.changed
+    - not kube_external_ca_mode
+
+- name: kubeadm | Create directory to store kubeadm patches
+  file:
+    path: "{{ kubeadm_patches.dest_dir }}"
+    state: directory
+    mode: 0640
+  when: kubeadm_patches is defined and kubeadm_patches.enabled
+
+- name: kubeadm | Copy kubeadm patches from inventory files
+  copy:
+    src: "{{ kubeadm_patches.source_dir }}/"
+    dest: "{{ kubeadm_patches.dest_dir }}"
+    owner: "root"
+    mode: 0644
+  when: kubeadm_patches is defined and kubeadm_patches.enabled
 
 - name: kubeadm | Initialize first master
   command: >-
@@ -129,7 +172,7 @@
     --config={{ kube_config_dir }}/kubeadm-config.yaml
     --ignore-preflight-errors=all
     --skip-phases={{ kubeadm_init_phases_skip | join(',') }}
-    --upload-certs
+    {{ kube_external_ca_mode | ternary('', '--upload-certs') }}
   register: kubeadm_init
   # Retry is because upload config sometimes fails
   retries: 3
@@ -178,6 +221,12 @@
   when: temp_token.stdout is defined
   tags:
     - kubeadm_token
+
+- name: PodSecurityPolicy | install PodSecurityPolicy
+  include_tasks: psp-install.yml
+  when:
+    - podsecuritypolicy_enabled
+    - inventory_hostname == first_kube_control_plane
 
 - name: kubeadm | Join other masters
   include_tasks: kubeadm-secondary.yml
