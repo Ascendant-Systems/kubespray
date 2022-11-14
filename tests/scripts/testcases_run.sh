@@ -16,10 +16,13 @@ else
   fi
 fi
 
+# needed for ara not to complain
+export TZ=UTC
 
 export ANSIBLE_REMOTE_USER=$SSH_USER
 export ANSIBLE_BECOME=true
 export ANSIBLE_BECOME_USER=root
+export ANSIBLE_CALLBACK_PLUGINS="$(python -m ara.setup.callback_plugins)"
 
 cd tests && make create-${CI_PLATFORM} -s ; cd -
 ansible-playbook tests/cloud_playbooks/wait-for-ssh.yml
@@ -42,6 +45,13 @@ fi
 if [[ "$CI_JOB_NAME" =~ "ubuntu" ]]; then
   # We need to tell ansible that ubuntu hosts are python3 only
   CI_TEST_ADDITIONAL_VARS="-e ansible_python_interpreter=/usr/bin/python3"
+fi
+
+ENABLE_040_TEST="true"
+if [[ "$CI_JOB_NAME" =~ "hardening" ]]; then
+  # TODO: We need to remove this condition by finding alternative container
+  # image instead of netchecker which doesn't work at hardening environments.
+  ENABLE_040_TEST="false"
 fi
 
 # Check out latest tag if testing upgrade
@@ -82,7 +92,9 @@ ansible-playbook --limit "all:!fake_hosts" -e @${CI_TEST_VARS} ${CI_TEST_ADDITIO
 ansible-playbook --limit "all:!fake_hosts" -e @${CI_TEST_VARS} ${CI_TEST_ADDITIONAL_VARS} tests/testcases/030_check-network.yml $ANSIBLE_LOG_LEVEL
 
 ## Advanced DNS checks
-ansible-playbook --limit "all:!fake_hosts" -e @${CI_TEST_VARS} ${CI_TEST_ADDITIONAL_VARS} tests/testcases/040_check-network-adv.yml $ANSIBLE_LOG_LEVEL
+if [ "${ENABLE_040_TEST}" = "true" ]; then
+  ansible-playbook --limit "all:!fake_hosts" -e @${CI_TEST_VARS} ${CI_TEST_ADDITIONAL_VARS} tests/testcases/040_check-network-adv.yml $ANSIBLE_LOG_LEVEL
+fi
 
 ## Kubernetes conformance tests
 ansible-playbook -i ${ANSIBLE_INVENTORY} -e @${CI_TEST_VARS} ${CI_TEST_ADDITIONAL_VARS} --limit "all:!fake_hosts" tests/testcases/100_check-k8s-conformance.yml $ANSIBLE_LOG_LEVEL
@@ -104,6 +116,11 @@ if [ "${IDEMPOT_CHECK}" = "true" ]; then
     ## Idempotency checks 5/5 (Advanced DNS checks)
     ansible-playbook ${ANSIBLE_LOG_LEVEL} -e @${CI_TEST_SETTING} -e @${CI_TEST_REGISTRY_MIRROR} -e @${CI_TEST_VARS} ${CI_TEST_ADDITIONAL_VARS} --limit "all:!fake_hosts" tests/testcases/040_check-network-adv.yml
   fi
+fi
+
+# Test node removal procedure
+if [ "${REMOVE_NODE_CHECK}" = "true" ]; then
+  ansible-playbook ${ANSIBLE_LOG_LEVEL} -e @${CI_TEST_SETTING} -e @${CI_TEST_REGISTRY_MIRROR}  -e @${CI_TEST_VARS} ${CI_TEST_ADDITIONAL_VARS} -e skip_confirmation=yes -e node=${REMOVE_NODE_NAME} --limit "all:!fake_hosts" remove-node.yml
 fi
 
 # Clean up at the end, this is to allow stage1 tests to include cleanup test

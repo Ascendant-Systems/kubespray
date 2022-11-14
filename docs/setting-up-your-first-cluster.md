@@ -14,8 +14,8 @@ hands-on guide to get started with Kubespray.
 
 ## Cluster Details
 
-* [kubespray](https://github.com/kubernetes-sigs/kubespray) v2.17.x
-* [kubernetes](https://github.com/kubernetes/kubernetes) v1.17.9
+* [kubespray](https://github.com/kubernetes-sigs/kubespray)
+* [kubernetes](https://github.com/kubernetes/kubernetes)
 
 ## Prerequisites
 
@@ -61,12 +61,12 @@ gcloud compute networks subnets create kubernetes \
 #### Firewall Rules
 
 Create a firewall rule that allows internal communication across all protocols.
-It is important to note that the ipip protocol has to be allowed in order for
+It is important to note that the vxlan protocol has to be allowed in order for
 the calico (see later) networking plugin to work.
 
 ```ShellSession
 gcloud compute firewall-rules create kubernetes-the-kubespray-way-allow-internal \
-  --allow tcp,udp,icmp,ipip \
+  --allow tcp,udp,icmp,vxlan \
   --network kubernetes-the-kubespray-way \
   --source-ranges 10.240.0.0/24
 ```
@@ -252,11 +252,7 @@ Ansible will now execute the playbook, this can take up to 20 minutes.
 We will leverage a kubeconfig file from one of the controller nodes to access
  the cluster as administrator from our local workstation.
 
-> In this simplified set-up, we did not include a load balancer that usually
- sits on top of the
-three controller nodes for a high available API server endpoint. In this
- simplified tutorial we connect directly to one of the three
- controllers.
+> In this simplified set-up, we did not include a load balancer that usually sits on top of the three controller nodes for a high available API server endpoint. In this simplified tutorial we connect directly to one of the three controllers.
 
 First, we need to edit the permission of the kubeconfig file on one of the
 controller nodes:

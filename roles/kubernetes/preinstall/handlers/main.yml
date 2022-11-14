@@ -23,12 +23,11 @@
   command: /usr/bin/coreos-cloudinit --from-file {{ resolveconf_cloud_init_conf }}
   when: ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"]
 
-- name: Preinstall | update resolvconf for Fedora CoreOS
+- name: Preinstall | update resolvconf for networkmanager
   command: /bin/true
   notify:
     - Preinstall | reload NetworkManager
     - Preinstall | reload kubelet
-  when: is_fedora_coreos
 
 - name: Preinstall | reload NetworkManager
   service:
@@ -96,6 +95,10 @@
 
 - name: Preinstall | restart kube-apiserver crio/containerd
   shell: "{{ bin_dir }}/crictl pods --name kube-apiserver* -q | xargs -I% --no-run-if-empty bash -c '{{ bin_dir }}/crictl stopp % && {{ bin_dir }}/crictl rmp %'"
+  register: preinstall_restart_apiserver
+  retries: 10
+  until: preinstall_restart_apiserver.rc == 0
+  delay: 1
   when:
     - container_manager in ['crio', 'containerd']
     - inventory_hostname in groups['kube_control_plane']
@@ -121,3 +124,9 @@
   service:
     name: systemd-resolved
     state: restarted
+
+- name: Preinstall | restart ntp
+  service:
+    name: "{{ ntp_service_name }}"
+    state: restarted
+  when: ntp_enabled

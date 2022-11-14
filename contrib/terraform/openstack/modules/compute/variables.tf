@@ -68,6 +68,14 @@ variable "network_id" {
   default = ""
 }
 
+variable "use_existing_network" {
+  type = bool
+}
+
+variable "network_router_id" {
+  default = ""
+}
+
 variable "k8s_master_fips" {
   type = list
 }
@@ -78,6 +86,10 @@ variable "k8s_master_no_etcd_fips" {
 
 variable "k8s_node_fips" {
   type = list
+}
+
+variable "k8s_masters_fips" {
+  type = map
 }
 
 variable "k8s_nodes_fips" {
@@ -104,9 +116,9 @@ variable "k8s_allowed_egress_ips" {
   type = list
 }
 
-variable "k8s_nodes" {}
+variable "k8s_masters" {}
 
-variable "wait_for_floatingip" {}
+variable "k8s_nodes" {}
 
 variable "supplementary_master_groups" {
   default = ""
@@ -121,6 +133,10 @@ variable "master_allowed_ports" {
 }
 
 variable "worker_allowed_ports" {
+  type = list
+}
+
+variable "bastion_allowed_ports" {
   type = list
 }
 
@@ -168,4 +184,12 @@ variable "group_vars_path" {
 
 variable "port_security_enabled" {
   type = bool
+}
+
+variable "force_null_port_security" {
+  type = bool
+}
+
+variable "private_subnet_id" {
+  type = string
 }
