@@ -24,7 +24,7 @@
 
 - name: Stop if unknown OS
   assert:
-    that: ansible_distribution in ['RedHat', 'CentOS', 'Fedora', 'Ubuntu', 'Debian', 'Flatcar', 'Flatcar Container Linux by Kinvolk', 'Suse', 'openSUSE Leap', 'openSUSE Tumbleweed', 'ClearLinux', 'OracleLinux', 'AlmaLinux', 'Rocky', 'Amazon', 'Kylin Linux Advanced Server', 'UnionTech']
+    that: ansible_distribution in ['RedHat', 'CentOS', 'Fedora', 'Ubuntu', 'Debian', 'Flatcar', 'Flatcar Container Linux by Kinvolk', 'Suse', 'openSUSE Leap', 'openSUSE Tumbleweed', 'ClearLinux', 'OracleLinux', 'AlmaLinux', 'Rocky', 'Amazon', 'Kylin Linux Advanced Server', 'UnionTech', 'openEuler']
     msg: "{{ ansible_distribution }} is not a known OS"
   when: not ignore_assert_errors
 
@@ -187,6 +187,7 @@
     that:
       - 2 ** (kube_network_node_prefix - kube_pods_subnet | ipaddr('prefix')) >= groups['k8s_cluster'] | length
     msg: "Not enough IPs are available for the desired node count."
+  when: kube_network_plugin != 'calico'
   run_once: yes
 
 - name: Stop if unknown dns mode

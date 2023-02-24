@@ -207,10 +207,10 @@ calico_healthhost: "0.0.0.0"
 
 ### Optional : Configure VXLAN hardware Offload
 
-Because of the Issue [projectcalico/calico#4727](https://github.com/projectcalico/calico/issues/4727), The VXLAN Offload is disable by default. It can be configured like this:
+The VXLAN Offload is disable by default. It can be configured like this to enabled it:
 
 ```yml
-calico_feature_detect_override: "ChecksumOffloadBroken=true" # The vxlan offload will enabled with kernel version is > 5.7 (It may cause problem on buggy NIC driver)
+calico_feature_detect_override: "ChecksumOffloadBroken=false" # The vxlan offload will enabled (It may cause problem on buggy NIC driver)
 ```
 
 ### Optional : Configure Calico Node probe timeouts
@@ -234,6 +234,8 @@ If you are running your cluster with the default calico settings and are upgradi
 
 * perform a manual migration to vxlan before upgrading kubespray (see migrating from IP in IP to VXLAN below)
 * pin the pre-2.19 settings in your ansible inventory (see IP in IP mode settings below)
+
+**Note:**: Vxlan in ipv6 only supported when kernel >= 3.12. So if your kernel version < 3.12, Please don't set `calico_vxlan_mode_ipv6: vxlanAlways`. More details see [#Issue 6877](https://github.com/projectcalico/calico/issues/6877).
 
 ### IP in IP mode
 

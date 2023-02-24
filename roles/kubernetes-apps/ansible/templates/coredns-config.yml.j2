@@ -36,13 +36,18 @@ data:
             lameduck 5s
         }
         ready
-        kubernetes {{ dns_domain }} {% if enable_coredns_reverse_dns_lookups %}in-addr.arpa ip6.arpa {% endif %}{
+        kubernetes {{ dns_domain }} {% if coredns_kubernetes_extra_domains is defined %}{{ coredns_kubernetes_extra_domains }} {% endif %}{% if enable_coredns_reverse_dns_lookups %}in-addr.arpa ip6.arpa {% endif %}{
           pods insecure
 {% if enable_coredns_k8s_endpoint_pod_names %}
           endpoint_pod_names
 {% endif %}
 {% if enable_coredns_reverse_dns_lookups %}
           fallthrough in-addr.arpa ip6.arpa
+{% endif %}
+{% if coredns_kubernetes_extra_opts is defined %}
+{% for opt in coredns_kubernetes_extra_opts %}
+          {{ opt }}
+{% endfor %}
 {% endif %}
         }
         prometheus :9153
