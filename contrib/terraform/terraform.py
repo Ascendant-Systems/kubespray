@@ -284,8 +284,6 @@ def openstack_host(resource, module_name):
         'network': parse_attr_list(raw_attrs, 'network'),
         'region': raw_attrs.get('region', ''),
         'security_groups': parse_list(raw_attrs, 'security_groups'),
-        # ansible
-        'ansible_ssh_port': 22,
         # workaround for an OpenStack bug where hosts have a different domain
         # after they're restarted
         'host_domain': 'novalocal',
@@ -299,6 +297,9 @@ def openstack_host(resource, module_name):
 
     if 'floating_ip' in raw_attrs:
         attrs['private_ipv4'] = raw_attrs['network.0.fixed_ip_v4']
+
+    if 'metadata.use_access_ip' in raw_attrs and raw_attrs['metadata.use_access_ip'] == "0":
+        attrs.pop('access_ip')
 
     try:
         if 'metadata.prefer_ipv6' in raw_attrs and raw_attrs['metadata.prefer_ipv6'] == "1":
@@ -318,7 +319,9 @@ def openstack_host(resource, module_name):
 
     # attrs specific to Ansible
     if 'metadata.ssh_user' in raw_attrs:
-        attrs['ansible_ssh_user'] = raw_attrs['metadata.ssh_user']
+        attrs['ansible_user'] = raw_attrs['metadata.ssh_user']
+    if 'metadata.ssh_port' in raw_attrs:
+        attrs['ansible_port'] = raw_attrs['metadata.ssh_port']
 
     if 'volume.#' in list(raw_attrs.keys()) and int(raw_attrs['volume.#']) > 0:
         device_index = 1

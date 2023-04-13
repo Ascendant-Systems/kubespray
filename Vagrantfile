@@ -56,14 +56,14 @@ $subnet ||= "172.18.8"
 $subnet_ipv6 ||= "fd3c:b398:0698:0756"
 $os ||= "ubuntu1804"
 $network_plugin ||= "flannel"
-# Setting multi_networking to true will install Multus: https://github.com/intel/multus-cni
+# Setting multi_networking to true will install Multus: https://github.com/k8snetworkplumbingwg/multus-cni
 $multi_networking ||= "False"
 $download_run_once ||= "True"
 $download_force_cache ||= "False"
 # The first three nodes are etcd servers
-$etcd_instances ||= $num_instances
+$etcd_instances ||= [$num_instances, 3].min
 # The first two nodes are kube masters
-$kube_master_instances ||= $num_instances == 1 ? $num_instances : ($num_instances - 1)
+$kube_master_instances ||= [$num_instances, 2].min
 # All nodes are kube nodes
 $kube_node_instances ||= $num_instances
 # The following only works when using the libvirt provider
@@ -82,6 +82,13 @@ $ansible_tags ||= ENV['VAGRANT_ANSIBLE_TAGS'] || ""
 $playbook ||= "cluster.yml"
 
 host_vars = {}
+
+# throw error if os is not supported
+if ! SUPPORTED_OS.key?($os)
+  puts "Unsupported OS: #{$os}"
+  puts "Supported OS are: #{SUPPORTED_OS.keys.join(', ')}"
+  exit 1
+end
 
 $box = SUPPORTED_OS[$os][:box]
 # if $inventory is not set, try to use example

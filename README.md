@@ -77,6 +77,10 @@ docker run --rm -it --mount type=bind,source="$(pwd)"/inventory/sample,dst=/inve
 ansible-playbook -i /inventory/inventory.ini --private-key /root/.ssh/id_rsa cluster.yml
 ```
 
+#### Collection
+
+See [here](docs/ansible_collection.md) if you wish to use this repository as an Ansible collection
+
 ### Vagrant
 
 For Vagrant we need to install Python dependencies for provisioning tasks.
@@ -150,29 +154,29 @@ Note: Upstart/SysV init based OS types are not supported.
 ## Supported Components
 
 - Core
-  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.26.1
+  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.26.3
   - [etcd](https://github.com/etcd-io/etcd) v3.5.6
   - [docker](https://www.docker.com/) v20.10 (see note)
-  - [containerd](https://containerd.io/) v1.6.18
+  - [containerd](https://containerd.io/) v1.7.0
   - [cri-o](http://cri-o.io/) v1.24 (experimental: see [CRI-O Note](docs/cri-o.md). Only on fedora, ubuntu and centos based OS)
 - Network Plugin
   - [cni-plugins](https://github.com/containernetworking/plugins) v1.2.0
-  - [calico](https://github.com/projectcalico/calico) v3.24.5
+  - [calico](https://github.com/projectcalico/calico) v3.25.1
   - [canal](https://github.com/projectcalico/canal) (given calico/flannel versions)
-  - [cilium](https://github.com/cilium/cilium) v1.12.1
+  - [cilium](https://github.com/cilium/cilium) v1.13.0
   - [flannel](https://github.com/flannel-io/flannel) v0.20.2
   - [kube-ovn](https://github.com/alauda/kube-ovn) v1.10.7
   - [kube-router](https://github.com/cloudnativelabs/kube-router) v1.5.1
-  - [multus](https://github.com/intel/multus-cni) v3.8
+  - [multus](https://github.com/k8snetworkplumbingwg/multus-cni) v3.8
   - [weave](https://github.com/weaveworks/weave) v2.8.1
-  - [kube-vip](https://github.com/kube-vip/kube-vip) v0.5.8
+  - [kube-vip](https://github.com/kube-vip/kube-vip) v0.5.11
 - Application
-  - [cert-manager](https://github.com/jetstack/cert-manager) v1.11.0
+  - [cert-manager](https://github.com/jetstack/cert-manager) v1.11.1
   - [coredns](https://github.com/coredns/coredns) v1.9.3
-  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.6.4
+  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.7.0
   - [krew](https://github.com/kubernetes-sigs/krew) v0.4.3
-  - [argocd](https://argoproj.github.io/) v2.5.10
-  - [helm](https://helm.sh/) v3.10.3
+  - [argocd](https://argoproj.github.io/) v2.6.7
+  - [helm](https://helm.sh/) v3.11.2
   - [metallb](https://metallb.universe.tf/)  v0.12.1
   - [registry](https://github.com/distribution/distribution) v2.8.1
 - Storage Plugin
@@ -182,7 +186,7 @@ Note: Upstart/SysV init based OS types are not supported.
   - [azure-csi-plugin](https://github.com/kubernetes-sigs/azuredisk-csi-driver) v1.10.0
   - [cinder-csi-plugin](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/cinder-csi-plugin/using-cinder-csi-plugin.md) v1.22.0
   - [gcp-pd-csi-plugin](https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver) v1.4.0
-  - [local-path-provisioner](https://github.com/rancher/local-path-provisioner) v0.0.22
+  - [local-path-provisioner](https://github.com/rancher/local-path-provisioner) v0.0.23
   - [local-volume-provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner) v2.5.0
 
 ## Container Runtime Notes
@@ -239,6 +243,9 @@ You can choose among ten network plugins. (default: `calico`, except Vagrant use
 - [macvlan](docs/macvlan.md): Macvlan is a Linux network driver. Pods have their own unique Mac and Ip address, connected directly the physical (layer 2) network.
 
 - [multus](docs/multus.md): Multus is a meta CNI plugin that provides multiple network interface support to pods. For each interface Multus delegates CNI calls to secondary CNI plugins such as Calico, macvlan, etc.
+
+- [custom_cni](roles/network-plugin/custom_cni/) : You can specify some manifests that will be applied to the clusters to bring you own CNI and use non-supported ones by Kubespray.
+  See `tests/files/custom_cni/README.md` and `tests/files/custom_cni/values.yaml`for an example with a CNI provided by a Helm Chart.
 
 The network plugin to use is defined by the variable `kube_network_plugin`. There is also an
 option to leverage built-in cloud provider networking instead.

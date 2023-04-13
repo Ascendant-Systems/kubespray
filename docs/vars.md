@@ -205,6 +205,15 @@ Stack](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/dns-stack.m
 
 * *kubelet_streaming_connection_idle_timeout* - Set the maximum time a streaming connection can be idle before the connection is automatically closed.
 
+* *kubelet_image_gc_high_threshold* - Set the percent of disk usage after which image garbage collection is always run.
+  The percent is calculated by dividing this field value by 100, so this field must be between 0 and 100, inclusive.
+  When specified, the value must be greater than imageGCLowThresholdPercent. Default: 85
+
+* *kubelet_image_gc_low_threshold* - Set the percent of disk usage before which image garbage collection is never run.
+  Lowest disk usage to garbage collect to.
+  The percent is calculated by dividing this field value by 100, so the field value must be between 0 and 100, inclusive.
+  When specified, the value must be less than imageGCHighThresholdPercent. Default: 80
+
 * *kubelet_make_iptables_util_chains* - If `true`, causes the kubelet ensures a set of `iptables` rules are present on host.
 
 * *kubelet_systemd_hardening* - If `true`, provides kubelet systemd service with security features for isolation.
@@ -243,7 +252,7 @@ node_taints:
   The auditing parameters can be tuned via the following variables (which default values are shown below):
   * `audit_log_path`: /var/log/audit/kube-apiserver-audit.log
   * `audit_log_maxage`: 30
-  * `audit_log_maxbackups`: 1
+  * `audit_log_maxbackups`: 10
   * `audit_log_maxsize`: 100
   * `audit_policy_file`: "{{ kube_config_dir }}/audit-policy/apiserver-audit-policy.yaml"
 
