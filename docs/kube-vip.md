@@ -39,6 +39,12 @@ kube_vip_services_enabled: false
 [additional manual steps](https://kube-vip.io/docs/usage/cloud-provider/)
 are needed.
 
+If using [local traffic policy](https://kube-vip.io/docs/usage/kubernetes-services/#external-traffic-policy-kube-vip-v050):
+
+```yaml
+kube_vip_enableServicesElection: true
+```
+
 If using [ARP mode](https://kube-vip.io/docs/installation/static/#arp) :
 
 ```yaml
@@ -57,4 +63,10 @@ kube_vip_bgppeers:
 # kube_vip_bgp_peeraddress:
 # kube_vip_bgp_peerpass:
 # kube_vip_bgp_peeras:
+```
+
+If using [control plane load-balancing](https://kube-vip.io/docs/about/architecture/#control-plane-load-balancing):
+
+```yaml
+kube_vip_lb_enable: true
 ```

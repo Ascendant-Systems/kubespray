@@ -13,7 +13,7 @@ locals {
   lb_backend_servers = flatten([
     for lb_name, loadbalancer in var.loadbalancers : [
       for backend_server in loadbalancer.backend_servers : {
-        port = loadbalancer.port
+        port = loadbalancer.target_port
         lb_name = lb_name
         server_name = backend_server
       }
@@ -80,7 +80,7 @@ resource "upcloud_server" "master" {
   lifecycle {
     ignore_changes = [storage_devices]
   }
-  
+
   firewall  = var.firewall_enabled
 
   dynamic "storage_devices" {
@@ -251,8 +251,8 @@ resource "upcloud_firewall_rules" "master" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv4"
       protocol               = firewall_rule.value
@@ -267,8 +267,8 @@ resource "upcloud_firewall_rules" "master" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv4"
       protocol               = firewall_rule.value
@@ -283,8 +283,8 @@ resource "upcloud_firewall_rules" "master" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv6"
       protocol               = firewall_rule.value
@@ -299,8 +299,8 @@ resource "upcloud_firewall_rules" "master" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv6"
       protocol               = firewall_rule.value
@@ -315,13 +315,27 @@ resource "upcloud_firewall_rules" "master" {
     content {
       action                 = "accept"
       comment                = "NTP Port"
-      destination_port_end   = "123"
-      destination_port_start = "123"
+      source_port_end        = "123"
+      source_port_start      = "123"
       direction              = "in"
       family                 = "IPv4"
       protocol               = firewall_rule.value
       source_address_end     = "255.255.255.255"
       source_address_start   = "0.0.0.0"
+    }
+  }
+
+  dynamic firewall_rule {
+    for_each = var.firewall_default_deny_in ? ["udp"] : []
+
+    content {
+      action                 = "accept"
+      comment                = "NTP Port"
+      source_port_end        = "123"
+      source_port_start      = "123"
+      direction              = "in"
+      family                 = "IPv6"
+      protocol               = firewall_rule.value
     }
   }
 
@@ -394,8 +408,8 @@ resource "upcloud_firewall_rules" "k8s" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv4"
       protocol               = firewall_rule.value
@@ -410,8 +424,8 @@ resource "upcloud_firewall_rules" "k8s" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv4"
       protocol               = firewall_rule.value
@@ -426,8 +440,8 @@ resource "upcloud_firewall_rules" "k8s" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv6"
       protocol               = firewall_rule.value
@@ -442,8 +456,8 @@ resource "upcloud_firewall_rules" "k8s" {
     content {
       action                 = "accept"
       comment                = "UpCloud DNS"
-      destination_port_end   = "53"
-      destination_port_start = "53"
+      source_port_end        = "53"
+      source_port_start      = "53"
       direction              = "in"
       family                 = "IPv6"
       protocol               = firewall_rule.value
@@ -458,13 +472,27 @@ resource "upcloud_firewall_rules" "k8s" {
     content {
       action                 = "accept"
       comment                = "NTP Port"
-      destination_port_end   = "123"
-      destination_port_start = "123"
+      source_port_end        = "123"
+      source_port_start      = "123"
       direction              = "in"
       family                 = "IPv4"
       protocol               = firewall_rule.value
       source_address_end     = "255.255.255.255"
       source_address_start   = "0.0.0.0"
+    }
+  }
+
+  dynamic firewall_rule {
+    for_each = var.firewall_default_deny_in ? ["udp"] : []
+
+    content {
+      action                 = "accept"
+      comment                = "NTP Port"
+      source_port_end        = "123"
+      source_port_start      = "123"
+      direction              = "in"
+      family                 = "IPv6"
+      protocol               = firewall_rule.value
     }
   }
 
@@ -497,7 +525,7 @@ resource "upcloud_loadbalancer_backend" "lb_backend" {
 
 resource "upcloud_loadbalancer_frontend" "lb_frontend" {
   for_each = var.loadbalancer_enabled ? var.loadbalancers : {}
-  
+
   loadbalancer         = upcloud_loadbalancer.lb[0].id
   name                 = "lb-frontend-${each.key}"
   mode                 = "tcp"
@@ -507,7 +535,7 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_backend_member" {
   for_each = {
-    for be_server in local.lb_backend_servers: 
+    for be_server in local.lb_backend_servers:
       "${be_server.server_name}-lb-backend-${be_server.lb_name}" => be_server
       if var.loadbalancer_enabled
   }
@@ -519,4 +547,12 @@ resource "upcloud_loadbalancer_static_backend_member" "lb_backend_member" {
   weight       = 100
   max_sessions = var.loadbalancer_plan == "production-small" ? 50000 : 1000
   enabled      = true
+}
+
+resource "upcloud_server_group" "server_groups" {
+  for_each      = var.server_groups
+  title         = each.key
+  anti_affinity = each.value.anti_affinity
+  labels        = {}
+  members       = [for server in each.value.servers : merge(upcloud_server.master, upcloud_server.worker)[server].id]
 }

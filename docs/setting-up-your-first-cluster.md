@@ -272,7 +272,7 @@ scp $USERNAME@$IP_CONTROLLER_0:/etc/kubernetes/admin.conf kubespray-do.conf
 
 This kubeconfig file uses the internal IP address of the controller node to
 access the API server. This kubeconfig file will thus not work of from
-outside of the VPC network. We will need to change the API server IP address
+outside the VPC network. We will need to change the API server IP address
 to the controller node his external IP address. The external IP address will be
 accepted in the
 TLS negotiation as we added the controllers external IP addresses in the SSL
@@ -466,7 +466,7 @@ kubectl logs $POD_NAME
 
 #### Exec
 
-In this section you will verify the ability to [execute commands in a container](https://kubernetes.io/docs/tasks/debug-application-cluster/get-shell-running-container/#running-individual-commands-in-a-container).
+In this section you will verify the ability to [execute commands in a container](https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/#running-individual-commands-in-a-container).
 
 Print the nginx version by executing the `nginx -v` command in the `nginx` container:
 
@@ -482,7 +482,7 @@ nginx version: nginx/1.19.1
 
 ### Kubernetes services
 
-#### Expose outside of the cluster
+#### Expose outside the cluster
 
 In this section you will verify the ability to expose applications using a [Service](https://kubernetes.io/docs/concepts/services-networking/service/).
 

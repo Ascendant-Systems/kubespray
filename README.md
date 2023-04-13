@@ -13,7 +13,7 @@ You can get your invite [here](http://slack.k8s.io/)
 
 ## Quick Start
 
-To deploy the cluster you can use :
+Below are several ways to use Kubespray to deploy a Kubernetes cluster.
 
 ### Ansible
 
@@ -41,34 +41,50 @@ cat inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
 ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root cluster.yml
 ```
 
-Note: When Ansible is already installed via system packages on the control machine, other python packages installed via `sudo pip install -r requirements.txt` will go to a different directory tree (e.g. `/usr/local/lib/python2.7/dist-packages` on Ubuntu) from Ansible's (e.g. `/usr/lib/python2.7/dist-packages/ansible` still on Ubuntu).
-As a consequence, `ansible-playbook` command will fail with:
+Note: When Ansible is already installed via system packages on the control node,
+Python packages installed via `sudo pip install -r requirements.txt` will go to
+a different directory tree (e.g. `/usr/local/lib/python2.7/dist-packages` on
+Ubuntu) from Ansible's (e.g. `/usr/lib/python2.7/dist-packages/ansible` still on
+Ubuntu). As a consequence, the `ansible-playbook` command will fail with:
 
 ```raw
 ERROR! no action detected in task. This often indicates a misspelled module name, or incorrect module path.
 ```
 
-probably pointing on a task depending on a module present in requirements.txt.
+This likely indicates that a task depends on a module present in ``requirements.txt``.
 
-One way of solving this would be to uninstall the Ansible package and then, to install it via pip but it is not always possible.
-A workaround consists of setting `ANSIBLE_LIBRARY` and `ANSIBLE_MODULE_UTILS` environment variables respectively to the `ansible/modules` and `ansible/module_utils` subdirectories of pip packages installation location, which can be found in the Location field of the output of `pip show [package]` before executing `ansible-playbook`.
+One way of addressing this is to uninstall the system Ansible package then
+reinstall Ansible via ``pip``, but this not always possible and one must
+take care regarding package versions.
+A workaround consists of setting the `ANSIBLE_LIBRARY`
+and `ANSIBLE_MODULE_UTILS` environment variables respectively to
+the `ansible/modules` and `ansible/module_utils` subdirectories of the ``pip``
+installation location, which is the ``Location`` shown by running
+`pip show [package]` before executing `ansible-playbook`.
 
-A simple way to ensure you get all the correct version of Ansible is to use the [pre-built docker image from Quay](https://quay.io/repository/kubespray/kubespray?tab=tags).
-You will then need to use [bind mounts](https://docs.docker.com/storage/bind-mounts/) to get the inventory and ssh key into the container, like this:
+A simple way to ensure you get all the correct version of Ansible is to use
+the [pre-built docker image from Quay](https://quay.io/repository/kubespray/kubespray?tab=tags).
+You will then need to use [bind mounts](https://docs.docker.com/storage/bind-mounts/)
+to access the inventory and SSH key in the container, like this:
 
 ```ShellSession
-docker pull quay.io/kubespray/kubespray:v2.20.0
+git checkout v2.21.0
+docker pull quay.io/kubespray/kubespray:v2.21.0
 docker run --rm -it --mount type=bind,source="$(pwd)"/inventory/sample,dst=/inventory \
   --mount type=bind,source="${HOME}"/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
-  quay.io/kubespray/kubespray:v2.20.0 bash
+  quay.io/kubespray/kubespray:v2.21.0 bash
 # Inside the container you may now run the kubespray playbooks:
 ansible-playbook -i /inventory/inventory.ini --private-key /root/.ssh/id_rsa cluster.yml
 ```
 
+#### Collection
+
+See [here](docs/ansible_collection.md) if you wish to use this repository as an Ansible collection
+
 ### Vagrant
 
-For Vagrant we need to install python dependencies for provisioning tasks.
-Check if Python and pip are installed:
+For Vagrant we need to install Python dependencies for provisioning tasks.
+Check that ``Python`` and ``pip`` are installed:
 
 ```ShellSession
 python -V && pip -V
@@ -131,35 +147,36 @@ vagrant up
 - **Kylin Linux Advanced Server V10** (experimental: see [kylin linux notes](docs/kylinlinux.md))
 - **Amazon Linux 2** (experimental: see [amazon linux notes](docs/amazonlinux.md))
 - **UOS Linux** (experimental: see [uos linux notes](docs/uoslinux.md))
+- **openEuler** (experimental: see [openEuler notes](docs/openeuler.md))
 
 Note: Upstart/SysV init based OS types are not supported.
 
 ## Supported Components
 
 - Core
-  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.25.3
-  - [etcd](https://github.com/etcd-io/etcd) v3.5.5
+  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.26.3
+  - [etcd](https://github.com/etcd-io/etcd) v3.5.6
   - [docker](https://www.docker.com/) v20.10 (see note)
-  - [containerd](https://containerd.io/) v1.6.9
+  - [containerd](https://containerd.io/) v1.7.0
   - [cri-o](http://cri-o.io/) v1.24 (experimental: see [CRI-O Note](docs/cri-o.md). Only on fedora, ubuntu and centos based OS)
 - Network Plugin
-  - [cni-plugins](https://github.com/containernetworking/plugins) v1.1.1
-  - [calico](https://github.com/projectcalico/calico) v3.23.3
+  - [cni-plugins](https://github.com/containernetworking/plugins) v1.2.0
+  - [calico](https://github.com/projectcalico/calico) v3.25.1
   - [canal](https://github.com/projectcalico/canal) (given calico/flannel versions)
-  - [cilium](https://github.com/cilium/cilium) v1.12.1
-  - [flannel](https://github.com/flannel-io/flannel) v0.19.2
-  - [kube-ovn](https://github.com/alauda/kube-ovn) v1.9.7
+  - [cilium](https://github.com/cilium/cilium) v1.13.0
+  - [flannel](https://github.com/flannel-io/flannel) v0.20.2
+  - [kube-ovn](https://github.com/alauda/kube-ovn) v1.10.7
   - [kube-router](https://github.com/cloudnativelabs/kube-router) v1.5.1
-  - [multus](https://github.com/intel/multus-cni) v3.8
+  - [multus](https://github.com/k8snetworkplumbingwg/multus-cni) v3.8
   - [weave](https://github.com/weaveworks/weave) v2.8.1
-  - [kube-vip](https://github.com/kube-vip/kube-vip) v0.5.5
+  - [kube-vip](https://github.com/kube-vip/kube-vip) v0.5.11
 - Application
-  - [cert-manager](https://github.com/jetstack/cert-manager) v1.9.1
-  - [coredns](https://github.com/coredns/coredns) v1.8.6
-  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.4.0
+  - [cert-manager](https://github.com/jetstack/cert-manager) v1.11.1
+  - [coredns](https://github.com/coredns/coredns) v1.9.3
+  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.7.0
   - [krew](https://github.com/kubernetes-sigs/krew) v0.4.3
-  - [argocd](https://argoproj.github.io/) v2.4.16
-  - [helm](https://helm.sh/) v3.9.4
+  - [argocd](https://argoproj.github.io/) v2.6.7
+  - [helm](https://helm.sh/) v3.11.2
   - [metallb](https://metallb.universe.tf/)  v0.12.1
   - [registry](https://github.com/distribution/distribution) v2.8.1
 - Storage Plugin
@@ -169,29 +186,29 @@ Note: Upstart/SysV init based OS types are not supported.
   - [azure-csi-plugin](https://github.com/kubernetes-sigs/azuredisk-csi-driver) v1.10.0
   - [cinder-csi-plugin](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/cinder-csi-plugin/using-cinder-csi-plugin.md) v1.22.0
   - [gcp-pd-csi-plugin](https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver) v1.4.0
-  - [local-path-provisioner](https://github.com/rancher/local-path-provisioner) v0.0.22
+  - [local-path-provisioner](https://github.com/rancher/local-path-provisioner) v0.0.23
   - [local-volume-provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner) v2.5.0
 
 ## Container Runtime Notes
 
-- The list of available docker version is 18.09, 19.03 and 20.10. The recommended docker version is 20.10. The kubelet might break on docker's non-standard version numbering (it no longer uses semantic versioning). To ensure auto-updates don't break your cluster look into e.g. yum versionlock plugin or apt pin).
+- Supported Docker versions are 18.09, 19.03 and 20.10. The *recommended* Docker version is 20.10. `Kubelet` might break on docker's non-standard version numbering (it no longer uses semantic versioning). To ensure auto-updates don't break your cluster look into e.g. the YUM  ``versionlock`` plugin or ``apt pin``).
 - The cri-o version should be aligned with the respective kubernetes version (i.e. kube_version=1.20.x, crio_version=1.20)
 
 ## Requirements
 
-- **Minimum required version of Kubernetes is v1.23**
+- **Minimum required version of Kubernetes is v1.24**
 - **Ansible v2.11+, Jinja 2.11+ and python-netaddr is installed on the machine that will run Ansible commands**
 - The target servers must have **access to the Internet** in order to pull docker images. Otherwise, additional configuration is required (See [Offline Environment](docs/offline-environment.md))
 - The target servers are configured to allow **IPv4 forwarding**.
 - If using IPv6 for pods and services, the target servers are configured to allow **IPv6 forwarding**.
 - The **firewalls are not managed**, you'll need to implement your own rules the way you used to.
     in order to avoid any issue during deployment you should disable your firewall.
-- If kubespray is ran from non-root user account, correct privilege escalation method
+- If kubespray is run from non-root user account, correct privilege escalation method
     should be configured in the target servers. Then the `ansible_become` flag
     or command parameters `--become or -b` should be specified.
 
 Hardware:
-These limits are safe guarded by Kubespray. Actual requirements for your workload can differ. For a sizing guide go to the [Building Large Clusters](https://kubernetes.io/docs/setup/cluster-large/#size-of-master-and-master-components) guide.
+These limits are safeguarded by Kubespray. Actual requirements for your workload can differ. For a sizing guide go to the [Building Large Clusters](https://kubernetes.io/docs/setup/cluster-large/#size-of-master-and-master-components) guide.
 
 - Master
   - Memory: 1500 MB
@@ -200,7 +217,7 @@ These limits are safe guarded by Kubespray. Actual requirements for your workloa
 
 ## Network Plugins
 
-You can choose between 10 network plugins. (default: `calico`, except Vagrant uses `flannel`)
+You can choose among ten network plugins. (default: `calico`, except Vagrant uses `flannel`)
 
 - [flannel](docs/flannel.md): gre/vxlan (layer 2) networking.
 
@@ -227,7 +244,10 @@ You can choose between 10 network plugins. (default: `calico`, except Vagrant us
 
 - [multus](docs/multus.md): Multus is a meta CNI plugin that provides multiple network interface support to pods. For each interface Multus delegates CNI calls to secondary CNI plugins such as Calico, macvlan, etc.
 
-The choice is defined with the variable `kube_network_plugin`. There is also an
+- [custom_cni](roles/network-plugin/custom_cni/) : You can specify some manifests that will be applied to the clusters to bring you own CNI and use non-supported ones by Kubespray.
+  See `tests/files/custom_cni/README.md` and `tests/files/custom_cni/values.yaml`for an example with a CNI provided by a Helm Chart.
+
+The network plugin to use is defined by the variable `kube_network_plugin`. There is also an
 option to leverage built-in cloud provider networking instead.
 See also [Network checker](docs/netcheck.md).
 

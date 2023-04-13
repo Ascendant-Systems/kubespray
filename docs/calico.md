@@ -187,7 +187,7 @@ The inventory above will deploy the following topology assuming that calico's
 
 ### Optional : Define default endpoint to host action
 
-By default Calico blocks traffic from endpoints to the host itself by using an iptables DROP action. When using it in kubernetes the action has to be changed to RETURN (default in kubespray) or ACCEPT (see <https://github.com/projectcalico/felix/issues/660> and <https://github.com/projectcalico/calicoctl/issues/1389).> Otherwise all network packets from pods (with hostNetwork=False) to services endpoints (with hostNetwork=True) within the same node are dropped.
+By default Calico blocks traffic from endpoints to the host itself by using an iptables DROP action. When using it in kubernetes the action has to be changed to RETURN (default in kubespray) or ACCEPT (see <https://docs.tigera.io/calico/latest/network-policy/hosts/protect-hosts#control-default-behavior-of-workload-endpoint-to-host-traffic> ) Otherwise all network packets from pods (with hostNetwork=False) to services endpoints (with hostNetwork=True) within the same node are dropped.
 
 To re-define default action please set the following variable in your inventory:
 
@@ -207,10 +207,10 @@ calico_healthhost: "0.0.0.0"
 
 ### Optional : Configure VXLAN hardware Offload
 
-Because of the Issue [projectcalico/calico#4727](https://github.com/projectcalico/calico/issues/4727), The VXLAN Offload is disable by default. It can be configured like this:
+The VXLAN Offload is disable by default. It can be configured like this to enabled it:
 
 ```yml
-calico_feature_detect_override: "ChecksumOffloadBroken=true" # The vxlan offload will enabled with kernel version is > 5.7 (It may cause problem on buggy NIC driver)
+calico_feature_detect_override: "ChecksumOffloadBroken=false" # The vxlan offload will enabled (It may cause problem on buggy NIC driver)
 ```
 
 ### Optional : Configure Calico Node probe timeouts
@@ -234,6 +234,8 @@ If you are running your cluster with the default calico settings and are upgradi
 
 * perform a manual migration to vxlan before upgrading kubespray (see migrating from IP in IP to VXLAN below)
 * pin the pre-2.19 settings in your ansible inventory (see IP in IP mode settings below)
+
+**Note:**: Vxlan in ipv6 only supported when kernel >= 3.12. So if your kernel version < 3.12, Please don't set `calico_vxlan_mode_ipv6: vxlanAlways`. More details see [#Issue 6877](https://github.com/projectcalico/calico/issues/6877).
 
 ### IP in IP mode
 
@@ -374,12 +376,7 @@ Calico node, typha and kube-controllers need to be able to talk to the kubernete
 
 Kubespray sets up the `kubernetes-services-endpoint` configmap based on the contents of the `loadbalancer_apiserver` inventory variable documented in [HA Mode](/docs/ha-mode.md).
 
-If no external loadbalancer is used, Calico eBPF can also use the localhost loadbalancer option. In this case Calico Automatic Host Endpoints need to be enabled to allow services like `coredns` and `metrics-server` to communicate with the kubernetes host endpoint. See [this blog post](https://www.projectcalico.org/securing-kubernetes-nodes-with-calico-automatic-host-endpoints/) on enabling automatic host endpoints.
-
-```yaml
-loadbalancer_apiserver_localhost: true
-use_localhost_as_kubeapi_loadbalancer: true
-```
+If no external loadbalancer is used, Calico eBPF can also use the localhost loadbalancer option. We are able to do so only if you use the same port for the localhost apiserver loadbalancer and the kube-apiserver. In this case Calico Automatic Host Endpoints need to be enabled to allow services like `coredns` and `metrics-server` to communicate with the kubernetes host endpoint. See [this blog post](https://www.projectcalico.org/securing-kubernetes-nodes-with-calico-automatic-host-endpoints/) on enabling automatic host endpoints.
 
 ### Tunneled versus Direct Server Return
 
