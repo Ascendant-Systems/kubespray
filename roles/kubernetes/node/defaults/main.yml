@@ -20,9 +20,6 @@ kubelet_kubelet_cgroups: "/{{ kube_service_cgroups }}/kubelet.service"
 kubelet_runtime_cgroups_cgroupfs: "/system.slice/{{ container_manager }}.service"
 kubelet_kubelet_cgroups_cgroupfs: "/system.slice/kubelet.service"
 
-### fail with swap on (default true)
-kubelet_fail_swap_on: true
-
 # Set systemd service hardening features
 kubelet_systemd_hardening: false
 
@@ -69,7 +66,7 @@ eviction_hard_control_plane: {}
 kubelet_status_update_frequency: 10s
 
 # kube-vip
-kube_vip_version: v0.5.11
+kube_vip_version: v0.5.12
 
 kube_vip_arp_enabled: false
 kube_vip_interface:
@@ -95,6 +92,7 @@ loadbalancer_apiserver_memory_requests: 32M
 loadbalancer_apiserver_cpu_requests: 25m
 
 loadbalancer_apiserver_keepalive_timeout: 5m
+loadbalancer_apiserver_pod_name: "{% if loadbalancer_apiserver_type == 'nginx' %}nginx-proxy{% else %}haproxy{% endif %}"
 
 # Uncomment if you need to enable deprecated runtimes
 # kube_api_runtime_config:
@@ -143,7 +141,7 @@ kubelet_node_custom_flags: []
 
 # If non-empty, will use this string as identification instead of the actual hostname
 kube_override_hostname: >-
-  {%- if cloud_provider is defined and cloud_provider in [ 'aws' ] -%}
+  {%- if cloud_provider is defined and cloud_provider in ['aws'] -%}
   {%- else -%}
   {{ inventory_hostname }}
   {%- endif -%}
@@ -163,14 +161,14 @@ sysctl_file_path: "/etc/sysctl.d/99-sysctl.conf"
 # For the openstack integration kubelet will need credentials to access
 # openstack apis like nova and cinder. Per default this values will be
 # read from the environment.
-openstack_auth_url: "{{ lookup('env','OS_AUTH_URL')  }}"
-openstack_username: "{{ lookup('env','OS_USERNAME')  }}"
-openstack_password: "{{ lookup('env','OS_PASSWORD')  }}"
-openstack_region: "{{ lookup('env','OS_REGION_NAME')  }}"
-openstack_tenant_id: "{{ lookup('env','OS_TENANT_ID')| default(lookup('env','OS_PROJECT_ID')|default(lookup('env','OS_PROJECT_NAME'),true),true) }}"
-openstack_tenant_name: "{{ lookup('env','OS_TENANT_NAME') }}"
-openstack_domain_name: "{{ lookup('env','OS_USER_DOMAIN_NAME') }}"
-openstack_domain_id: "{{ lookup('env','OS_USER_DOMAIN_ID') }}"
+openstack_auth_url: "{{ lookup('env', 'OS_AUTH_URL') }}"
+openstack_username: "{{ lookup('env', 'OS_USERNAME') }}"
+openstack_password: "{{ lookup('env', 'OS_PASSWORD') }}"
+openstack_region: "{{ lookup('env', 'OS_REGION_NAME') }}"
+openstack_tenant_id: "{{ lookup('env', 'OS_TENANT_ID') | default(lookup('env', 'OS_PROJECT_ID') | default(lookup('env', 'OS_PROJECT_NAME'), true), true) }}"
+openstack_tenant_name: "{{ lookup('env', 'OS_TENANT_NAME') }}"
+openstack_domain_name: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+openstack_domain_id: "{{ lookup('env', 'OS_USER_DOMAIN_ID') }}"
 
 # For the vsphere integration, kubelet will need credentials to access
 # vsphere apis
@@ -188,7 +186,7 @@ vsphere_resource_pool: "{{ lookup('env', 'VSPHERE_RESOURCE_POOL') }}"
 
 vsphere_scsi_controller_type: pvscsi
 # vsphere_public_network is name of the network the VMs are joined to
-vsphere_public_network: "{{ lookup('env', 'VSPHERE_PUBLIC_NETWORK')|default('') }}"
+vsphere_public_network: "{{ lookup('env', 'VSPHERE_PUBLIC_NETWORK') | default('') }}"
 
 ## When azure is used, you need to also set the following variables.
 ## see docs/azure.md for details on how to get these values

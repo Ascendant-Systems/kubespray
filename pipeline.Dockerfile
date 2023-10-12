@@ -1,5 +1,5 @@
-# Use imutable image tags rather than mutable tags (like ubuntu:20.04)
-FROM ubuntu:focal-20220531
+# Use imutable image tags rather than mutable tags (like ubuntu:22.04)
+FROM ubuntu:jammy-20230308
 # Some tools like yamllint need this
 # Pip needs this as well at the moment to install ansible
 # (and potentially other packages)
@@ -29,6 +29,7 @@ RUN apt update -q \
          gnupg2 \
          software-properties-common \
          unzip \
+         libvirt-clients \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
     && add-apt-repository "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
     && apt update -q \
@@ -36,14 +37,16 @@ RUN apt update -q \
     && apt autoremove -yqq --purge && apt clean && rm -rf /var/lib/apt/lists/* /var/log/*
 
 WORKDIR /kubespray
-COPY . .
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 \
+RUN --mount=type=bind,target=./requirements.txt,src=./requirements.txt \
+    --mount=type=bind,target=./tests/requirements.txt,src=./tests/requirements.txt \
+    --mount=type=bind,target=./roles/kubespray-defaults/defaults/main.yaml,src=./roles/kubespray-defaults/defaults/main.yaml \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3 1 \
     && pip install --no-compile --no-cache-dir pip -U \
-    && pip install --no-compile --no-cache-dir -r tests/requirements.txt -r requirements.txt \
+    && pip install --no-compile --no-cache-dir -r tests/requirements.txt \
     && KUBE_VERSION=$(sed -n 's/^kube_version: //p' roles/kubespray-defaults/defaults/main.yaml) \
-    && curl -L https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/linux/$(dpkg --print-architecture)/kubectl -o /usr/local/bin/kubectl \
-    && echo $(curl -L https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/linux/$(dpkg --print-architecture)/kubectl.sha256) /usr/local/bin/kubectl | sha256sum --check \
+    && curl -L https://dl.k8s.io/release/$KUBE_VERSION/bin/linux/$(dpkg --print-architecture)/kubectl -o /usr/local/bin/kubectl \
+    && echo $(curl -L https://dl.k8s.io/release/$KUBE_VERSION/bin/linux/$(dpkg --print-architecture)/kubectl.sha256) /usr/local/bin/kubectl | sha256sum --check \
     && chmod a+x /usr/local/bin/kubectl \
     # Install Vagrant
     && curl -LO https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}-1_$(dpkg --print-architecture).deb \
@@ -52,6 +55,4 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 \
     && vagrant plugin install vagrant-libvirt \
     # Install Kubernetes collections
     && pip install --no-compile --no-cache-dir kubernetes \
-    && ansible-galaxy collection install kubernetes.core \
-    # Clean cache python
-    && find / -type d -name '*__pycache__' -prune -exec rm -rf {} \;
+    && ansible-galaxy collection install kubernetes.core

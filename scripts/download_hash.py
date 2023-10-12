@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # After a new version of Kubernetes has been released,
-# run this script to update roles/download/defaults/main.yml
+# run this script to update roles/download/defaults/main/main.yml
 # with new hashes.
 
 import hashlib
@@ -10,7 +10,7 @@ import sys
 import requests
 from ruamel.yaml import YAML
 
-MAIN_YML = "../roles/download/defaults/main.yml"
+MAIN_YML = "../roles/download/defaults/main/main.yml"
 
 def open_main_yaml():
     yaml = YAML()
@@ -36,7 +36,7 @@ def download_hash(versions):
             for version in versions:
                 if not version.startswith("v"):
                     version = f"v{version}"
-                url = f"https://storage.googleapis.com/kubernetes-release/release/{version}/bin/linux/{arch}/{download}"
+                url = f"https://dl.k8s.io/release/{version}/bin/linux/{arch}/{download}"
                 download_file = requests.get(url, allow_redirects=True)
                 download_file.raise_for_status()
                 sha256sum = hashlib.sha256(download_file.content).hexdigest()

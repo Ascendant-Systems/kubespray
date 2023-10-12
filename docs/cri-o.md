@@ -40,21 +40,7 @@ crio_registries:
         insecure: false
 ```
 
-## Note about pids_limit
-
-For heavily mult-threaded workloads like databases, the default of 1024 for pids-limit is too low.
-This parameter controls not just the number of processes but also the amount of threads
-(since a thread is technically a process with shared memory). See [cri-o#1921]
-
-In order to increase the default `pids_limit` for cri-o based deployments you need to set the `crio_pids_limit`
-for your `k8s_cluster` ansible group or per node depending on the use case.
-
-```yaml
-crio_pids_limit: 4096
-```
-
 [CRI-O]: https://cri-o.io/
-[cri-o#1921]: https://github.com/cri-o/cri-o/issues/1921
 
 ## Note about user namespaces
 
@@ -76,3 +62,13 @@ The `allowed_annotations` configures `crio.conf` accordingly.
 
 The `crio_remap_enable` configures the `/etc/subuid` and `/etc/subgid` files to add an entry for the **containers** user.
 By default, 16M uids and gids are reserved for user namespaces (256 pods * 65536 uids/gids) at the end of the uid/gid space.
+
+## Optional : NRI
+
+[Node Resource Interface](https://github.com/containerd/nri) (NRI) is disabled by default for the CRI-O. If you
+are using CRI-O version v1.26.0 or above, then you can enable it with the
+following configuration:
+
+```yaml
+nri_enabled: true
+```
