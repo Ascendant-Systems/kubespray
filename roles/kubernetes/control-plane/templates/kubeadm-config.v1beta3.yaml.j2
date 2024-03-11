@@ -19,8 +19,6 @@ nodeRegistration:
 {% if inventory_hostname in groups['kube_control_plane'] and inventory_hostname not in groups['kube_node'] %}
   taints:
   - effect: NoSchedule
-    key: node-role.kubernetes.io/master
-  - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
 {% else %}
   taints: []
@@ -116,6 +114,9 @@ certificatesDir: {{ kube_cert_dir }}
 imageRepository: {{ kube_image_repo }}
 apiServer:
   extraArgs:
+{% if kube_apiserver_etcd_compaction_interval is defined %}
+    etcd-compaction-interval: "{{ kube_apiserver_etcd_compaction_interval }}"
+{% endif %}
 {% if kube_apiserver_pod_eviction_not_ready_timeout_seconds is defined %}
     default-not-ready-toleration-seconds: "{{ kube_apiserver_pod_eviction_not_ready_timeout_seconds }}"
 {% endif %}
@@ -226,6 +227,9 @@ apiServer:
 {% if kubelet_rotate_server_certificates %}
     kubelet-certificate-authority: {{ kube_cert_dir }}/ca.crt
 {% endif %}
+{% if kube_apiserver_tracing %}
+    tracing-config-file: {{ kube_config_dir }}/tracing/apiserver-tracing.yaml
+{% endif %}
 {% if kubernetes_audit or kube_token_auth | default(true) or kube_webhook_token_auth | default(false) or ( cloud_provider is defined and cloud_provider in ["openstack", "azure", "vsphere", "aws", "gce"] ) or apiserver_extra_volumes or ssl_ca_dirs | length %}
   extraVolumes:
 {% if cloud_provider is defined and cloud_provider in ["openstack", "azure", "vsphere", "aws", "gce"] %}
@@ -266,6 +270,13 @@ apiServer:
     readOnly: false
     pathType: DirectoryOrCreate
 {% endif %}
+{% if kube_apiserver_tracing %}
+  - name: tracing
+    hostPath: {{ kube_config_dir }}/tracing
+    mountPath: {{ kube_config_dir }}/tracing
+    readOnly: true
+    pathType: DirectoryOrCreate
+{% endif %}
 {% for volume in apiserver_extra_volumes %}
   - name: {{ volume.name }}
     hostPath: {{ volume.hostPath }}
@@ -294,11 +305,15 @@ controllerManager:
     cluster-cidr: "{{ kube_pods_subnet }}{{ ',' + kube_pods_subnet_ipv6 if enable_dual_stack_networks else '' }}"
 {% endif %}
     service-cluster-ip-range: "{{ kube_service_addresses }}{{ ',' + kube_service_addresses_ipv6 if enable_dual_stack_networks else '' }}"
+{% if kube_network_plugin is defined and kube_network_plugin == "calico" and not calico_ipam_host_local %}
+    allocate-node-cidrs: "false"
+{% else %}
 {% if enable_dual_stack_networks %}
     node-cidr-mask-size-ipv4: "{{ kube_network_node_prefix }}"
     node-cidr-mask-size-ipv6: "{{ kube_network_node_prefix_ipv6 }}"
 {% else %}
     node-cidr-mask-size: "{{ kube_network_node_prefix }}"
+{% endif %}
 {% endif %}
     profiling: "{{ kube_profiling }}"
     terminated-pod-gc-threshold: "{{ kube_controller_terminated_pod_gc_threshold }}"

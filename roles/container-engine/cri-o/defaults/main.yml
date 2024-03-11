@@ -69,10 +69,6 @@ youki_runtime:
   type: oci
   root: /run/youki
 
-# TODO(cristicalin): remove this after 2.21
-crio_download_base: "download.opensuse.org/repositories/devel:kubic:libcontainers:stable"
-crio_download_crio: "http://{{ crio_download_base }}:/cri-o:/"
-
 # Reserve 16M uids and gids for user namespaces (256 pods * 65536 uids/gids)
 # at the end of the uid/gid space
 crio_remap_enable: false
@@ -82,13 +78,6 @@ crio_subuid_length: 16777216
 crio_subgid_start: 2130706432
 crio_subgid_length: 16777216
 
-# cri-o binary files
-crio_bin_files:
-  - conmon
-  - crio
-  - crio-status
-  - pinns
-
 # cri-o manual files
 crio_man_files:
   5:
@@ -97,3 +86,6 @@ crio_man_files:
   8:
     - crio
     - crio-status
+
+# If set to true, it will enable the CRIU support in cri-o
+crio_criu_support_enabled: false

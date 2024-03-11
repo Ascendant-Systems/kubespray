@@ -34,10 +34,10 @@ Some variables of note include:
 
 ## Addressing variables
 
-* *ip* - IP to use for binding services (host var)
+* *ip* - IP to use for binding services (host var). This would **usually** be the public ip.
 * *access_ip* - IP for other hosts to use to connect to. Often required when
   deploying from a cloud, such as OpenStack or GCE and you have separate
-  public/floating and private IPs.
+  public/floating and private IPs. This would **usually** be the private ip.
 * *ansible_default_ipv4.address* - Not Kubespray-specific, but it is used if ip
   and access_ip are undefined
 * *ip6* - IPv6 address to use for binding services. (host var)
@@ -186,6 +186,8 @@ Stack](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/dns-stack.m
 * *containerd_additional_runtimes* - Sets the additional Containerd runtimes used by the Kubernetes CRI plugin.
   [Default config](https://github.com/kubernetes-sigs/kubespray/blob/master/roles/container-engine/containerd/defaults/main.yml) can be overridden in inventory vars.
 
+* *crio_criu_support_enabled* - When set to `true`, enables the container checkpoint/restore in CRI-O. It's required to install [CRIU](https://criu.org/Installation) on the host when dumping/restoring checkpoints. And it's recommended to enable the feature gate `ContainerCheckpoint` so that the kubelet get a higher level API to simplify the operations (**Note**: It's still in experimental stage, just for container analytics so far). You can follow the [documentation](https://kubernetes.io/blog/2022/12/05/forensic-container-checkpointing-alpha/).
+
 * *http_proxy/https_proxy/no_proxy/no_proxy_exclude_workers/additional_no_proxy* - Proxy variables for deploying behind a
   proxy. Note that no_proxy defaults to all internal cluster IPs and hostnames
   that correspond to each node.
@@ -243,7 +245,7 @@ node_labels:
   label2_name: label2_value
 ```
 
-* *node_taints* - Taints applied to nodes via kubelet --register-with-taints parameter.
+* *node_taints* - Taints applied to nodes via `kubectl taint node`.
   For example, taints can be set in the inventory as variables or more widely in group_vars.
   *node_taints* has to be defined as a list of strings in format `key=value:effect`, e.g.:
 
@@ -252,8 +254,6 @@ node_taints:
   - "node.example.com/external=true:NoSchedule"
 ```
 
-* *podsecuritypolicy_enabled* - When set to `true`, enables the PodSecurityPolicy admission controller and defines two policies `privileged` (applying to all resources in `kube-system` namespace and kubelet) and `restricted` (applying all other namespaces).
-  Addons deployed in kube-system namespaces are handled.
 * *kubernetes_audit* - When set to `true`, enables Auditing.
   The auditing parameters can be tuned via the following variables (which default values are shown below):
   * `audit_log_path`: /var/log/audit/kube-apiserver-audit.log
@@ -271,6 +271,7 @@ node_taints:
   * `audit_webhook_mode`: batch
   * `audit_webhook_batch_max_size`: 100
   * `audit_webhook_batch_max_wait`: 1s
+* *kubectl_alias* - Bash alias of kubectl to interact with Kubernetes cluster much easier.
 
 ### Custom flags for Kube Components
 

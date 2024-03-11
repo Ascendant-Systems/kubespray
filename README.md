@@ -75,11 +75,11 @@ You will then need to use [bind mounts](https://docs.docker.com/storage/bind-mou
 to access the inventory and SSH key in the container, like this:
 
 ```ShellSession
-git checkout v2.23.0
-docker pull quay.io/kubespray/kubespray:v2.23.0
+git checkout v2.24.1
+docker pull quay.io/kubespray/kubespray:v2.24.1
 docker run --rm -it --mount type=bind,source="$(pwd)"/inventory/sample,dst=/inventory \
   --mount type=bind,source="${HOME}"/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
-  quay.io/kubespray/kubespray:v2.23.0 bash
+  quay.io/kubespray/kubespray:v2.24.1 bash
 # Inside the container you may now run the kubespray playbooks:
 ansible-playbook -i /inventory/inventory.ini --private-key /root/.ssh/id_rsa cluster.yml
 ```
@@ -121,7 +121,6 @@ vagrant up
 - [Vagrant install](docs/vagrant.md)
 - [Flatcar Container Linux bootstrap](docs/flatcar.md)
 - [Fedora CoreOS bootstrap](docs/fcos.md)
-- [Debian Jessie setup](docs/debian.md)
 - [openSUSE setup](docs/opensuse.md)
 - [Downloaded artifacts](docs/downloads.md)
 - [Cloud providers](docs/cloud.md)
@@ -161,28 +160,28 @@ Note: Upstart/SysV init based OS types are not supported.
 ## Supported Components
 
 - Core
-  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.28.2
-  - [etcd](https://github.com/etcd-io/etcd) v3.5.9
-  - [docker](https://www.docker.com/) v20.10 (see note)
-  - [containerd](https://containerd.io/) v1.7.6
-  - [cri-o](http://cri-o.io/) v1.27 (experimental: see [CRI-O Note](docs/cri-o.md). Only on fedora, ubuntu and centos based OS)
+  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.29.2
+  - [etcd](https://github.com/etcd-io/etcd) v3.5.10
+  - [docker](https://www.docker.com/) v24.0 (see [Note](#container-runtime-notes))
+  - [containerd](https://containerd.io/) v1.7.13
+  - [cri-o](http://cri-o.io/) v1.29.1 (experimental: see [CRI-O Note](docs/cri-o.md). Only on fedora, ubuntu and centos based OS)
 - Network Plugin
   - [cni-plugins](https://github.com/containernetworking/plugins) v1.2.0
-  - [calico](https://github.com/projectcalico/calico) v3.26.1
+  - [calico](https://github.com/projectcalico/calico) v3.27.2
   - [cilium](https://github.com/cilium/cilium) v1.13.4
   - [flannel](https://github.com/flannel-io/flannel) v0.22.0
   - [kube-ovn](https://github.com/alauda/kube-ovn) v1.11.5
-  - [kube-router](https://github.com/cloudnativelabs/kube-router) v1.6.0
+  - [kube-router](https://github.com/cloudnativelabs/kube-router) v2.0.0
   - [multus](https://github.com/k8snetworkplumbingwg/multus-cni) v3.8
   - [weave](https://github.com/weaveworks/weave) v2.8.1
   - [kube-vip](https://github.com/kube-vip/kube-vip) v0.5.12
 - Application
-  - [cert-manager](https://github.com/jetstack/cert-manager) v1.11.1
-  - [coredns](https://github.com/coredns/coredns) v1.10.1
-  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.9.0
+  - [cert-manager](https://github.com/jetstack/cert-manager) v1.13.2
+  - [coredns](https://github.com/coredns/coredns) v1.11.1
+  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.9.6
   - [krew](https://github.com/kubernetes-sigs/krew) v0.4.4
-  - [argocd](https://argoproj.github.io/) v2.8.0
-  - [helm](https://helm.sh/) v3.12.3
+  - [argocd](https://argoproj.github.io/) v2.8.4
+  - [helm](https://helm.sh/) v3.14.2
   - [metallb](https://metallb.universe.tf/)  v0.13.9
   - [registry](https://github.com/distribution/distribution) v2.8.1
 - Storage Plugin
@@ -190,19 +189,20 @@ Note: Upstart/SysV init based OS types are not supported.
   - [rbd-provisioner](https://github.com/kubernetes-incubator/external-storage) v2.1.1-k8s1.11
   - [aws-ebs-csi-plugin](https://github.com/kubernetes-sigs/aws-ebs-csi-driver) v0.5.0
   - [azure-csi-plugin](https://github.com/kubernetes-sigs/azuredisk-csi-driver) v1.10.0
-  - [cinder-csi-plugin](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/cinder-csi-plugin/using-cinder-csi-plugin.md) v1.22.0
+  - [cinder-csi-plugin](https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/cinder-csi-plugin/using-cinder-csi-plugin.md) v1.29.0
   - [gcp-pd-csi-plugin](https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver) v1.9.2
   - [local-path-provisioner](https://github.com/rancher/local-path-provisioner) v0.0.24
   - [local-volume-provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner) v2.5.0
+  - [node-feature-discovery](https://github.com/kubernetes-sigs/node-feature-discovery) v0.14.2
 
 ## Container Runtime Notes
 
-- Supported Docker versions are 18.09, 19.03, 20.10, 23.0 and 24.0. The *recommended* Docker version is 20.10 (except on Debian bookworm which without supporting for 20.10 and below any more). `Kubelet` might break on docker's non-standard version numbering (it no longer uses semantic versioning). To ensure auto-updates don't break your cluster look into e.g. the YUM  ``versionlock`` plugin or ``apt pin``).
+- Supported Docker versions are 18.09, 19.03, 20.10, 23.0 and 24.0. The *recommended* Docker version is 24.0. `Kubelet` might break on docker's non-standard version numbering (it no longer uses semantic versioning). To ensure auto-updates don't break your cluster look into e.g. the YUM  ``versionlock`` plugin or ``apt pin``).
 - The cri-o version should be aligned with the respective kubernetes version (i.e. kube_version=1.20.x, crio_version=1.20)
 
 ## Requirements
 
-- **Minimum required version of Kubernetes is v1.26**
+- **Minimum required version of Kubernetes is v1.27**
 - **Ansible v2.14+, Jinja 2.11+ and python-netaddr is installed on the machine that will run Ansible commands**
 - The target servers must have **access to the Internet** in order to pull docker images. Otherwise, additional configuration is required (See [Offline Environment](docs/offline-environment.md))
 - The target servers are configured to allow **IPv4 forwarding**.

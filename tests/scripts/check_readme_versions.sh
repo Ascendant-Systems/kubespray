@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-TARGET_COMPONENTS="containerd calico cilium flannel kube-ovn kube-router weave cert-manager krew helm metallb registry cephfs-provisioner rbd-provisioner aws-ebs-csi-plugin azure-csi-plugin cinder-csi-plugin gcp-pd-csi-plugin local-path-provisioner local-volume-provisioner kube-vip ingress-nginx"
+TARGET_COMPONENTS="containerd calico cilium flannel kube-ovn kube-router weave cert-manager krew helm metallb registry cephfs-provisioner rbd-provisioner aws-ebs-csi-plugin azure-csi-plugin cinder-csi-plugin gcp-pd-csi-plugin local-path-provisioner local-volume-provisioner kube-vip ingress-nginx node-feature-discovery"
 
 # cd to the root directory of kubespray
 cd $(dirname $0)/../../
 
 echo checking kubernetes..
-version_from_default=$(grep "^kube_version:" ./roles/kubespray-defaults/defaults/main.yaml | awk '{print $2}' | sed s/\"//g)
+version_from_default=$(grep "^kube_version:" ./roles/kubespray-defaults/defaults/main/main.yml | awk '{print $2}' | sed s/\"//g)
 version_from_readme=$(grep " \[kubernetes\]" ./README.md | awk '{print $3}')
 if [ "${version_from_default}" != "${version_from_readme}" ]; then
 	echo "The version of kubernetes is different between main.yml(${version_from_default}) and README.md(${version_from_readme})."
@@ -17,7 +17,7 @@ fi
 
 for component in $(echo ${TARGET_COMPONENTS}); do
 	echo checking ${component}..
-	version_from_default=$(grep "^$(echo ${component} | sed s/"-"/"_"/g)_version:" ./roles/download/defaults/main/main.yml | awk '{print $2}' | sed s/\"//g | sed s/^v//)
+	version_from_default=$(grep "^$(echo ${component} | sed s/"-"/"_"/g)_version:" ./roles/kubespray-defaults/defaults/main/download.yml | awk '{print $2}' | sed s/\"//g | sed s/^v//)
 	if [ "${version_from_default}" = "" ]; then
 		version_from_default=$(grep "^$(echo ${component} | sed s/"-"/"_"/g)_version:" ./roles/kubernetes/node/defaults/main.yml | awk '{print $2}' | sed s/\"//g | sed s/^v//)
 	fi
