@@ -2,6 +2,10 @@
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: JoinConfiguration
 discovery:
+{% if kubeadm_use_file_discovery %}
+  file:
+    kubeConfigPath: {{ kube_config_dir }}/cluster-info-discovery-kubeconfig.yaml
+{% else %}
   bootstrapToken:
 {% if kubeadm_config_api_fqdn is defined %}
     apiServerEndpoint: {{ kubeadm_config_api_fqdn }}:{{ loadbalancer_apiserver.port | default(kube_apiserver_port) }}
@@ -14,6 +18,7 @@ discovery:
     - sha256:{{ kubeadm_ca_hash.stdout }}
 {% else %}
     unsafeSkipCAVerification: true
+{% endif %}
 {% endif %}
   timeout: {{ discovery_timeout }}
   tlsBootstrapToken: {{ kubeadm_token }}
@@ -33,7 +38,7 @@ nodeRegistration:
   - effect: NoSchedule
     key: node-role.kubernetes.io/calico-rr
 {% endif %}
-{% if kubeadm_patches is defined and kubeadm_patches.enabled %}
+{% if kubeadm_patches | length > 0 %}
 patches:
-  directory: {{ kubeadm_patches.dest_dir }}
+  directory: {{ kubeadm_patches_dir }}
 {% endif %}

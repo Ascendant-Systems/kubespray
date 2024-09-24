@@ -4,8 +4,8 @@
     path: "{{ item }}"
     state: directory
     owner: "{{ kube_owner }}"
-    mode: 0755
-  when: inventory_hostname in groups['k8s_cluster']
+    mode: "0755"
+  when: ('k8s_cluster' in group_names)
   become: true
   tags:
     - kubelet
@@ -15,7 +15,8 @@
     - bootstrap-os
     - apps
     - network
-    - master
+    - master    # master tag is deprecated and replaced by control-plane
+    - control-plane
     - node
   with_items:
     - "{{ kube_config_dir }}"
@@ -28,8 +29,8 @@
     path: "{{ item }}"
     state: directory
     owner: root
-    mode: 0755
-  when: inventory_hostname in groups['k8s_cluster']
+    mode: "0755"
+  when: ('k8s_cluster' in group_names)
   become: true
   tags:
     - kubelet
@@ -39,7 +40,8 @@
     - bootstrap-os
     - apps
     - network
-    - master
+    - master    # master tag is deprecated and replaced by control-plane
+    - control-plane
     - node
   with_items:
     - "{{ kube_cert_dir }}"
@@ -48,12 +50,12 @@
 - name: Check if kubernetes kubeadm compat cert dir exists
   stat:
     path: "{{ kube_cert_compat_dir }}"
-    get_attributes: no
-    get_checksum: no
-    get_mime: no
+    get_attributes: false
+    get_checksum: false
+    get_mime: false
   register: kube_cert_compat_dir_check
   when:
-    - inventory_hostname in groups['k8s_cluster']
+    - ('k8s_cluster' in group_names)
     - kube_cert_dir != kube_cert_compat_dir
 
 - name: Create kubernetes kubeadm compat cert dir (kubernetes/kubeadm issue 1498)
@@ -61,9 +63,9 @@
     src: "{{ kube_cert_dir }}"
     dest: "{{ kube_cert_compat_dir }}"
     state: link
-    mode: 0755
+    mode: "0755"
   when:
-    - inventory_hostname in groups['k8s_cluster']
+    - ('k8s_cluster' in group_names)
     - kube_cert_dir != kube_cert_compat_dir
     - not kube_cert_compat_dir_check.stat.exists
 
@@ -72,13 +74,13 @@
     path: "{{ item }}"
     state: directory
     owner: "{{ kube_owner }}"
-    mode: 0755
+    mode: "0755"
   with_items:
     - "/etc/cni/net.d"
     - "/opt/cni/bin"
   when:
     - kube_network_plugin in ["calico", "weave", "flannel", "cilium", "kube-ovn", "kube-router", "macvlan"]
-    - inventory_hostname in groups['k8s_cluster']
+    - ('k8s_cluster' in group_names)
   tags:
     - network
     - cilium
@@ -93,12 +95,12 @@
     path: "{{ item }}"
     state: directory
     owner: "{{ kube_owner }}"
-    mode: 0755
+    mode: "0755"
   with_items:
     - "/var/lib/calico"
   when:
     - kube_network_plugin == "calico"
-    - inventory_hostname in groups['k8s_cluster']
+    - ('k8s_cluster' in group_names)
   tags:
     - network
     - calico
@@ -113,7 +115,7 @@
     mode: "{{ local_volume_provisioner_directory_mode }}"
   with_items: "{{ local_volume_provisioner_storage_classes.keys() | list }}"
   when:
-    - inventory_hostname in groups['k8s_cluster']
+    - ('k8s_cluster' in group_names)
     - local_volume_provisioner_enabled
   tags:
     - persistent_volumes
