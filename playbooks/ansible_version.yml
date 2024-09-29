@@ -2,10 +2,10 @@
 - name: Check Ansible version
   hosts: all
   gather_facts: false
-  become: no
+  become: false
   run_once: true
   vars:
-    minimal_ansible_version: 2.15.5  # 2.15 versions before 2.15.5 are known to be buggy for kubespray
+    minimal_ansible_version: 2.16.4
     maximal_ansible_version: 2.17.0
   tags: always
   tasks:
@@ -25,7 +25,6 @@
       tags:
         - check
 
-    # CentOS 7 provides too old jinja version
     - name: "Check that jinja is not too old (install via pip)"
       assert:
         msg: "Your Jinja version is too old, install via pip"

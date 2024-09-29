@@ -60,17 +60,17 @@ You can create many different kubernetes topologies by setting the number of
 different classes of hosts. For each class there are options for allocating
 floating IP addresses or not.
 
-- Master nodes with etcd
-- Master nodes without etcd
+- Control plane nodes with etcd
+- Control plane nodes without etcd
 - Standalone etcd hosts
 - Kubernetes worker nodes
 
 Note that the Ansible script will report an invalid configuration if you wind up
 with an even number of etcd instances since that is not a valid configuration. This
 restriction includes standalone etcd nodes that are deployed in a cluster along with
-master nodes with etcd replicas. As an example, if you have three master nodes with
-etcd replicas and three standalone etcd nodes, the script will fail since there are
-now six total etcd replicas.
+control plane nodes with etcd replicas. As an example, if you have three control plane
+nodes with etcd replicas and three standalone etcd nodes, the script will fail since
+there are now six total etcd replicas.
 
 ### GlusterFS shared file system
 
@@ -619,7 +619,7 @@ Edit `inventory/$CLUSTER/group_vars/k8s_cluster/k8s_cluster.yml`:
 
 - Set variable **kube_network_plugin** to your desired networking plugin.
   - **flannel** works out-of-the-box
-  - **calico** requires [configuring OpenStack Neutron ports](/docs/openstack.md) to allow service and pod subnets
+  - **calico** requires [configuring OpenStack Neutron ports](/docs/cloud_providers/openstack.md) to allow service and pod subnets
 
 ```yml
 # Choose network plugin (calico, weave or flannel)

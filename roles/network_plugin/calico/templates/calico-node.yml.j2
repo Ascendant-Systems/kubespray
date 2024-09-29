@@ -1,7 +1,7 @@
 ---
 # This manifest installs the calico/node container, as well
 # as the Calico CNI plugins and network config on
-# each master and worker node in a Kubernetes cluster.
+# each control plane and worker node in a Kubernetes cluster.
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -38,7 +38,7 @@ spec:
       # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
       terminationGracePeriodSeconds: 0
       initContainers:
-{% if calico_datastore == "kdd" %}
+{% if calico_datastore == "kdd" and not calico_ipam_host_local %}
         # This container performs upgrade from host-local IPAM to calico-ipam.
         # It can be deleted if this is a fresh installation, or if you have already
         # upgraded to use calico-ipam.
@@ -310,6 +310,10 @@ spec:
               value: "{{ calico_node_ignorelooserpf }}"
             - name: CALICO_MANAGE_CNI
               value: "true"
+{% if calico_ipam_host_local %}
+            - name: USE_POD_CIDR
+              value: "true"
+{% endif %}
 {% if calico_node_extra_envs is defined %}
 {% for key in calico_node_extra_envs %}
             - name: {{ key }}
@@ -407,9 +411,11 @@ spec:
         - name: var-run-calico
           hostPath:
             path: /var/run/calico
+            type: DirectoryOrCreate
         - name: var-lib-calico
           hostPath:
             path: /var/lib/calico
+            type: DirectoryOrCreate
         # Used to install CNI.
         - name: cni-net-dir
           hostPath:
@@ -417,6 +423,7 @@ spec:
         - name: cni-bin-dir
           hostPath:
             path: /opt/cni/bin
+            type: DirectoryOrCreate
 {% if calico_datastore == "etcd" %}
         # Mount in the etcd TLS secrets.
         - name: etcd-certs
@@ -428,7 +435,7 @@ spec:
           hostPath:
             path: /run/xtables.lock
             type: FileOrCreate
-{% if calico_datastore == "kdd" %}
+{% if calico_datastore == "kdd" and not calico_ipam_host_local %}
         # Mount in the directory for host-local IPAM allocations. This is
         # used when upgrading from host-local to calico-ipam, and can be removed
         # if not using the upgrade-ipam init container.
