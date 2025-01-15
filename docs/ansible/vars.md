@@ -35,9 +35,9 @@ Some variables of note include:
 ## Addressing variables
 
 * *ip* - IP to use for binding services (host var). This would **usually** be the public ip.
-* *access_ip* - IP for other hosts to use to connect to. Often required when
-  deploying from a cloud, such as OpenStack or GCE and you have separate
-  public/floating and private IPs. This would **usually** be the private ip.
+* *access_ip* - IP to use from other hosts to connect to this host. Often required when deploying
+  from a cloud, such as OpenStack or GCE and you have separate public/floating and private IPs.
+  This would **usually** be the private ip.
 * *ansible_default_ipv4.address* - Not Kubespray-specific, but it is used if ip
   and access_ip are undefined
 * *ip6* - IPv6 address to use for binding services. (host var)
@@ -104,8 +104,7 @@ following default cluster parameters:
 * *enable_coredns_k8s_endpoint_pod_names* - If enabled, it configures endpoint_pod_names option for kubernetes plugin.
   on the CoreDNS service.
 
-* *cloud_provider* - Enable extra Kubelet option if operating inside GCE or
-  OpenStack (default is unset)
+* *cloud_provider* - The provider for cloud services. (default is unset, Set to `external` for running with an external cloud provider)
 
 * *kube_feature_gates* - A list of key=value pairs that describe feature gates for
   alpha/experimental Kubernetes features. (defaults is `[]`).
@@ -172,7 +171,7 @@ variables to match your requirements.
 * *dns_upstream_forward_extra_opts* - Options to add in the forward section of coredns/nodelocaldns related to upstream DNS servers
 
 For more information, see [DNS
-Stack](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/dns-stack.md).
+Stack](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/advanced/dns-stack.md).
 
 ## Other service variables
 
