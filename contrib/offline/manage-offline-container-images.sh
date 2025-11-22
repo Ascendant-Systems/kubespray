@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 OPTION=$1
 CURRENT_DIR=$(cd $(dirname $0); pwd)
@@ -118,6 +118,8 @@ function register_container_images() {
 		cp ${CURRENT_DIR}/registries.conf         ${TEMP_DIR}/registries.conf
 		sed -i s@"HOSTNAME"@"$(hostname)"@  ${TEMP_DIR}/registries.conf
 		sudo cp ${TEMP_DIR}/registries.conf   /etc/containers/registries.conf
+  elif [ "$(uname)" == "Darwin" ]; then
+    echo "This is a Mac, no configuration changes are required"
 	else
 		echo "runtime package(docker-ce, podman, nerctl, etc.) should be installed"
 		exit 1
@@ -125,7 +127,7 @@ function register_container_images() {
 
 	tar -zxvf ${IMAGE_TAR_FILE}
 
-	if [ "${create_registry}" ]; then
+	if ${create_registry}; then
 		sudo ${runtime} load -i ${IMAGE_DIR}/registry-latest.tar
 		set +e
 
@@ -146,7 +148,7 @@ function register_container_images() {
 		if [ "${org_image}" == "ID:" ]; then
 		  org_image=$(echo "${load_image}"  | awk '{print $4}')
 		fi
-		image_id=$(sudo ${runtime} image inspect ${org_image} | grep "\"Id\":" | awk -F: '{print $3}'| sed s/'\",'//)
+		image_id=$(sudo ${runtime} image inspect --format "{{.Id}}" "${org_image}")
 		if [ -z "${file_name}" ]; then
 			echo "Failed to get file_name for line ${line}"
 			exit 1
