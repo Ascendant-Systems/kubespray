@@ -94,14 +94,14 @@ Note: Upstart/SysV init based OS types are not supported.
 ## Supported Components
 
 - Core
-  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.31.4
-  - [etcd](https://github.com/etcd-io/etcd) v3.5.16
+  - [kubernetes](https://github.com/kubernetes/kubernetes) v1.31.9
+  - [etcd](https://github.com/etcd-io/etcd) v3.5.21
   - [docker](https://www.docker.com/) v26.1
-  - [containerd](https://containerd.io/) v1.7.24
-  - [cri-o](http://cri-o.io/) v1.31.0 (experimental: see [CRI-O Note](docs/CRI/cri-o.md). Only on fedora, ubuntu and centos based OS)
+  - [containerd](https://containerd.io/) v1.7.27
+  - [cri-o](http://cri-o.io/) v1.31.6 (experimental: see [CRI-O Note](docs/CRI/cri-o.md). Only on fedora, ubuntu and centos based OS)
 - Network Plugin
-  - [cni-plugins](https://github.com/containernetworking/plugins) v1.2.0
-  - [calico](https://github.com/projectcalico/calico) v3.29.1
+  - [cni-plugins](https://github.com/containernetworking/plugins) v1.4.1
+  - [calico](https://github.com/projectcalico/calico) v3.29.4
   - [cilium](https://github.com/cilium/cilium) v1.15.9
   - [flannel](https://github.com/flannel-io/flannel) v0.22.0
   - [kube-ovn](https://github.com/alauda/kube-ovn) v1.12.21
@@ -112,7 +112,7 @@ Note: Upstart/SysV init based OS types are not supported.
 - Application
   - [cert-manager](https://github.com/jetstack/cert-manager) v1.15.3
   - [coredns](https://github.com/coredns/coredns) v1.11.3
-  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.12.0
+  - [ingress-nginx](https://github.com/kubernetes/ingress-nginx) v1.12.1
   - [krew](https://github.com/kubernetes-sigs/krew) v0.4.4
   - [argocd](https://argoproj.github.io/) v2.11.0
   - [helm](https://helm.sh/) v3.16.4
