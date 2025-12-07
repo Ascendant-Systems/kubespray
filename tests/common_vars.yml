@@ -4,12 +4,11 @@ deploy_netchecker: true
 dns_min_replicas: 1
 unsafe_show_logs: true
 
+bin_dir: "{{ '/opt/bin' if ansible_os_family == 'Flatcar' else '/usr/local/bin' }}"
+
 # Registry mirrors settings
 docker_registry_mirrors:
   - "https://mirror.gcr.io"
-
-containerd_grpc_max_recv_message_size: 16777216
-containerd_grpc_max_send_message_size: 16777216
 
 containerd_registries_mirrors:
   - prefix: docker.io
@@ -20,9 +19,6 @@ containerd_registries_mirrors:
       - host: https://registry-1.docker.io
         capabilities: ["pull", "resolve"]
         skip_verify: false
-
-containerd_max_container_log_line_size: 16384
-
 crio_registries:
   - prefix: docker.io
     insecure: false
